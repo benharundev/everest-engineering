@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Inventory Reservation — Backend Developer Guide</title>
+<style>
+  :root {
+    --bg-base:     #0a0c10;
+    --bg-surface:  #10131a;
+    --bg-card:     #161b24;
+    --bg-card2:    #1b2130;
+    --border:      #252d3d;
+    --accent:      #f0b429;
+    --accent-dim:  rgba(240,180,41,0.10);
+    --green:       #06d6a0;
+    --yellow:      #ffb520;
+    --red:         #ef476f;
+    --blue:        #4cc9f0;
+    --purple:      #b5a4ff;
+    --orange:      #ff9f1c;
+    --text:        #e8eaf0;
+    --text-muted:  #7a8494;
+    --text-dim:    #404860;
+    --font-display:'Syne', system-ui, sans-serif;
+    --font-body:   'DM Sans', system-ui, sans-serif;
+    --font-mono:   'JetBrains Mono', 'Fira Code', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
+  body {
+    background: var(--bg-base); color: var(--text);
+    font-family: var(--font-body); font-size: 15px; line-height: 1.7;
+    display: flex; min-height: 100vh;
+  }
+
+  /* ── Sidebar ── */
+  #sidebar {
+    width: 270px; min-width: 270px; background: var(--bg-surface);
+    border-right: 1px solid var(--border); padding: 32px 0 40px;
+    position: sticky; top: 0; height: 100vh; overflow-y: auto;
+    display: flex; flex-direction: column;
+  }
+  #sidebar .brand { padding: 0 24px 28px; border-bottom: 1px solid var(--border); margin-bottom: 12px; }
+  #sidebar .brand-title { font-family: var(--font-display); font-size: 13px; font-weight: 800; color: var(--accent); letter-spacing: 0.08em; text-transform: uppercase; }
+  #sidebar .brand-sub   { font-size: 11px; color: var(--text-muted); margin-top: 3px; font-family: var(--font-mono); }
+  .nav-group-label { font-family: var(--font-mono); font-size: 10px; font-weight: 600; color: var(--text-dim); letter-spacing: 0.12em; text-transform: uppercase; padding: 18px 24px 6px; }
+  .nav-link { display: block; padding: 7px 24px; font-size: 13px; color: var(--text-muted); text-decoration: none; border-left: 2px solid transparent; transition: all 0.15s; }
+  .nav-link:hover  { color: var(--text); background: var(--bg-card); border-left-color: var(--border); }
+  .nav-link.active { color: var(--accent); border-left-color: var(--accent); background: var(--accent-dim); }
+
+  /* ── Content ── */
+  #content { flex: 1; max-width: 920px; padding: 56px 64px 100px; overflow-x: hidden; }
+
+  /* ── Typography ── */
+  h1 { font-family: var(--font-display); font-size: 36px; font-weight: 800; color: var(--text); letter-spacing: -0.02em; line-height: 1.15; margin-bottom: 12px; }
+  h1 span { color: var(--accent); }
+  h2 { font-family: var(--font-display); font-size: 22px; font-weight: 700; color: var(--text); margin: 56px 0 18px; padding-bottom: 10px; border-bottom: 1px solid var(--border); scroll-margin-top: 24px; }
+  h3 { font-family: var(--font-display); font-size: 16px; font-weight: 600; color: var(--text); margin: 32px 0 10px; scroll-margin-top: 24px; }
+  h4 { font-family: var(--font-mono); font-size: 12px; font-weight: 600; color: var(--text-muted); letter-spacing: 0.1em; text-transform: uppercase; margin: 24px 0 8px; }
+  p  { margin-bottom: 14px; color: var(--text-muted); }
+  strong { color: var(--text); font-weight: 600; }
+  a  { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .lead { font-size: 16px; color: var(--text-muted); line-height: 1.75; margin-bottom: 0; max-width: 700px; }
+
+  /* ── Hero badges ── */
+  .hero-meta { display: flex; gap: 10px; margin: 24px 0 0; flex-wrap: wrap; }
+  .hero-badge { display: inline-flex; align-items: center; gap: 6px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 5px 12px; font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); }
+  .hero-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+
+  /* ── Code ── */
+  pre { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px 24px; overflow-x: auto; margin: 16px 0 24px; font-family: var(--font-mono); font-size: 13px; line-height: 1.65; color: var(--text); }
+  code { font-family: var(--font-mono); font-size: 13px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px; padding: 2px 7px; color: var(--accent); }
+  pre code { background: none; border: none; padding: 0; color: inherit; }
+  .kw  { color: #c792ea; } .fn  { color: #82aaff; } .str { color: #c3e88d; }
+  .cm  { color: #546e7a; font-style: italic; } .ty  { color: #ffcb6b; } .nu  { color: #f78c6c; }
+  .at  { color: var(--accent); }
+
+  /* ── Callouts ── */
+  .callout { border-radius: 8px; padding: 16px 20px; margin: 20px 0; display: flex; gap: 14px; align-items: flex-start; border: 1px solid; }
+  .callout-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+  .callout-body { flex: 1; }
+  .callout-body p { margin-bottom: 0; font-size: 14px; }
+  .callout-title { font-weight: 600; margin-bottom: 4px; font-size: 13px; }
+  .callout.info    { background: rgba(76,201,240,0.06);  border-color: rgba(76,201,240,0.2); }
+  .callout.info    .callout-title { color: var(--blue); }
+  .callout.tip     { background: rgba(6,214,160,0.06);   border-color: rgba(6,214,160,0.2); }
+  .callout.tip     .callout-title { color: var(--green); }
+  .callout.warning { background: rgba(255,181,32,0.06);  border-color: rgba(255,181,32,0.2); }
+  .callout.warning .callout-title { color: var(--yellow); }
+  .callout.danger  { background: rgba(239,71,111,0.06);  border-color: rgba(239,71,111,0.2); }
+  .callout.danger  .callout-title { color: var(--red); }
+  .callout.gold    { background: rgba(240,180,41,0.06);  border-color: rgba(240,180,41,0.2); }
+  .callout.gold    .callout-title { color: var(--accent); }
+
+  /* ── Tables ── */
+  table { width: 100%; border-collapse: collapse; margin: 16px 0 24px; font-size: 13.5px; }
+  th { background: var(--bg-card2); font-family: var(--font-mono); font-size: 11px; font-weight: 600; color: var(--text-muted); letter-spacing: 0.08em; text-transform: uppercase; padding: 10px 14px; border: 1px solid var(--border); text-align: left; }
+  td { padding: 9px 14px; border: 1px solid var(--border); color: var(--text-muted); vertical-align: top; }
+  td code { font-size: 12px; }
+  tr:nth-child(even) td { background: rgba(255,255,255,0.015); }
+
+  /* ── Architecture layers ── */
+  .arch-diagram { display: flex; flex-direction: column; margin: 24px 0; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .arch-layer { display: flex; align-items: stretch; border-bottom: 1px solid var(--border); }
+  .arch-layer:last-child { border-bottom: none; }
+  .arch-label { width: 200px; min-width: 200px; padding: 14px 18px; font-family: var(--font-mono); font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; display: flex; align-items: center; border-right: 1px solid var(--border); }
+  .arch-body  { flex: 1; padding: 12px 18px; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+  .arch-chip  { background: var(--bg-card2); border: 1px solid var(--border); border-radius: 5px; padding: 4px 10px; font-family: var(--font-mono); font-size: 11.5px; color: var(--text-muted); }
+  .layer-pres .arch-label { background: rgba(76,201,240,0.06);   color: var(--blue);   }  .layer-pres .arch-chip  { border-color: rgba(76,201,240,0.2);   color: var(--blue);   }
+  .layer-app  .arch-label { background: rgba(6,214,160,0.06);    color: var(--green);  }  .layer-app  .arch-chip  { border-color: rgba(6,214,160,0.2);    color: var(--green);  }
+  .layer-dom  .arch-label { background: rgba(240,180,41,0.06);   color: var(--accent); }  .layer-dom  .arch-chip  { border-color: rgba(240,180,41,0.2);   color: var(--accent); }
+  .layer-inf  .arch-label { background: rgba(181,164,255,0.08);  color: var(--purple); }  .layer-inf  .arch-chip  { border-color: rgba(181,164,255,0.2);  color: var(--purple); }
+  .layer-com  .arch-label { background: rgba(255,159,28,0.06);   color: var(--orange); }  .layer-com  .arch-chip  { border-color: rgba(255,159,28,0.2);   color: var(--orange); }
+
+  /* ── Mermaid ── */
+  .mermaid-wrap { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 28px 20px 20px; margin: 20px 0 28px; overflow-x: auto; }
+  .mermaid-label { font-family: var(--font-mono); font-size: 10px; font-weight: 600; color: var(--text-dim); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 14px; }
+  .mermaid svg { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+
+  /* ── File tree ── */
+  .file-tree { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px 24px; font-family: var(--font-mono); font-size: 12.5px; line-height: 1.9; margin: 16px 0 24px; white-space: pre; overflow-x: auto; }
+  .file-tree .dir  { color: var(--accent); }
+  .file-tree .file { color: var(--text-muted); }
+  .file-tree .note { color: var(--text-dim); font-style: italic; }
+  .file-tree .hl   { color: var(--green); }
+
+  /* ── API endpoint cards ── */
+  .endpoint { display: flex; align-items: baseline; gap: 12px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; margin-bottom: 8px; }
+  .method { font-family: var(--font-mono); font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 4px; white-space: nowrap; }
+  .method.get    { background: rgba(6,214,160,0.15);   color: var(--green);  border: 1px solid rgba(6,214,160,0.3); }
+  .method.post   { background: rgba(76,201,240,0.15);  color: var(--blue);   border: 1px solid rgba(76,201,240,0.3); }
+  .method.delete { background: rgba(239,71,111,0.15);  color: var(--red);    border: 1px solid rgba(239,71,111,0.3); }
+  .endpoint-path { font-family: var(--font-mono); font-size: 13px; color: var(--text); flex: 1; }
+  .endpoint-desc { font-size: 13px; color: var(--text-muted); }
+
+  /* ── Footer ── */
+  footer { margin-top: 80px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-dim); font-family: var(--font-mono); }
+
+  @media (max-width: 900px) { #sidebar { display: none; } #content { padding: 32px 24px 80px; } }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'base',
+    themeVariables: {
+      background: '#161b24', primaryColor: '#1b2130', primaryTextColor: '#e8eaf0',
+      primaryBorderColor: '#252d3d', lineColor: '#f0b429', secondaryColor: '#10131a',
+      tertiaryColor: '#161b24', edgeLabelBackground: '#161b24', clusterBkg: '#10131a',
+      clusterBorder: '#252d3d', titleColor: '#e8eaf0', nodeBorder: '#252d3d',
+      fontFamily: 'JetBrains Mono, Fira Code, monospace', fontSize: '13px',
+      signalColor: '#f0b429', signalTextColor: '#e8eaf0',
+      actorBkg: '#1b2130', actorBorder: '#f0b429', actorTextColor: '#e8eaf0',
+      actorLineColor: '#252d3d', activationBkgColor: 'rgba(240,180,41,0.12)',
+      activationBorderColor: '#f0b429', labelBoxBkgColor: '#161b24',
+      labelBoxBorderColor: '#252d3d', labelTextColor: '#e8eaf0',
+      loopTextColor: '#7a8494', noteBkgColor: '#1b2130', noteBorderColor: '#ffb520', noteTextColor: '#e8eaf0',
+    },
+    flowchart: { curve: 'basis', padding: 20 },
+    sequence: { actorMargin: 60, messageMargin: 30, mirrorActors: false, useMaxWidth: true },
+  });
+</script>
+</head>
+<body>
+
+<!-- ══════════════ SIDEBAR ══════════════ -->
+<nav id="sidebar">
+  <div class="brand">
+    <div class="brand-title">Developer Guide</div>
+    <div class="brand-sub">inventory-reservation (Backend)</div>
+  </div>
+
+  <div class="nav-group-label">Overview</div>
+  <a class="nav-link" href="#intro">Introduction</a>
+  <a class="nav-link" href="#quickstart">Quick Start</a>
+  <a class="nav-link" href="#tech-stack">Tech Stack</a>
+  <a class="nav-link" href="#api">API Reference</a>
+
+  <div class="nav-group-label">Architecture</div>
+  <a class="nav-link" href="#layers">Layer Map</a>
+  <a class="nav-link" href="#file-tree">File Tree</a>
+
+  <div class="nav-group-label">Diagrams</div>
+  <a class="nav-link" href="#diag-layers">Layer Dependencies</a>
+  <a class="nav-link" href="#diag-reservation">Reservation State Machine</a>
+  <a class="nav-link" href="#diag-concurrency">Concurrency Strategy</a>
+  <a class="nav-link" href="#diag-circuit">Circuit Breaker</a>
+  <a class="nav-link" href="#diag-eda">Event-Driven Flow</a>
+  <a class="nav-link" href="#diag-sequence">Full Request Sequence</a>
+
+  <div class="nav-group-label">Layers</div>
+  <a class="nav-link" href="#domain">Domain</a>
+  <a class="nav-link" href="#application">Application</a>
+  <a class="nav-link" href="#infrastructure">Infrastructure</a>
+  <a class="nav-link" href="#presentation">Presentation</a>
+
+  <div class="nav-group-label">Key Patterns</div>
+  <a class="nav-link" href="#concurrency">Concurrency Strategy</a>
+  <a class="nav-link" href="#conventions">Conventions</a>
+</nav>
+
+<!-- ══════════════ CONTENT ══════════════ -->
+<main id="content">
+
+  <!-- INTRO -->
+  <section id="intro">
+    <h1>Backend <span>Developer Guide</span></h1>
+    <p class="lead">
+      Complete reference for engineers contributing to
+      <strong>inventory-reservation</strong> — a production-grade NestJS service
+      that prevents overselling under concurrency using a dual-path Redis + database strategy,
+      circuit breaker, and event-driven architecture.
+    </p>
+    <div class="hero-meta">
+      <span class="hero-badge"><span class="dot"></span>NestJS 11</span>
+      <span class="hero-badge"><span class="dot"></span>TypeORM + PostgreSQL</span>
+      <span class="hero-badge"><span class="dot"></span>Redis 7 + BullMQ</span>
+      <span class="hero-badge"><span class="dot"></span>DDD · SOLID · EDA</span>
+      <span class="hero-badge"><span class="dot"></span>Circuit Breaker</span>
+      <span class="hero-badge"><span class="dot"></span>Swagger at /api</span>
+    </div>
+  </section>
+
+  <!-- QUICK START -->
+  <section id="quickstart">
+    <h2>Quick Start</h2>
+
+    <h3>Prerequisites</h3>
+    <table>
+      <thead><tr><th>Service</th><th>Version / Port</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>nvm</td><td>—</td><td>Node Version Manager — install from <a href="https://github.com/nvm-sh/nvm" target="_blank">nvm-sh/nvm</a></td></tr>
+        <tr><td>Node.js</td><td>22</td><td>Switched via <code>nvm use 22</code></td></tr>
+        <tr><td>PostgreSQL</td><td>5434</td><td><code>DB_NAME=inventory_reservation</code></td></tr>
+        <tr><td>Redis</td><td>6381</td><td>Used for atomic stock counters and job queue</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Environment</h3>
+    <pre><code>PORT=3000
+DB_HOST=localhost
+DB_PORT=5434
+DB_USER=inventory
+DB_PASS=inventory
+DB_NAME=inventory_reservation
+REDIS_HOST=localhost
+REDIS_PORT=6381</code></pre>
+
+    <h3>Run locally</h3>
+<pre><code><span class="cm"># Switch to Node 22 (install if not present)</span>
+nvm install 22
+nvm use 22
+
+<span class="cm"># Install dependencies</span>
+npm install
+
+<span class="cm"># Start in watch mode (hot-reload)</span>
+npm run start:dev
+
+<span class="cm"># Production build + start</span>
+npm run build && npm run start
+
+<span class="cm"># Interactive simulation script</span>
+npm run simulate</code></pre>
+
+    <h3>Tests</h3>
+<pre><code><span class="cm"># Unit tests only</span>
+npm test
+
+<span class="cm"># Concurrency tests (run serially)</span>
+npm run test:concurrency
+
+<span class="cm"># Integration tests</span>
+npm run test:integration
+
+<span class="cm"># All suites with coverage</span>
+npm run test:all && npm run test:cov</code></pre>
+
+    <div class="callout tip">
+      <span class="callout-icon">✅</span>
+      <div class="callout-body">
+        <div class="callout-title">Swagger UI</div>
+        <p>Once running, full interactive API docs are available at <code>http://localhost:3000/api</code>.</p>
+      </div>
+    </div>
+
+    <div class="callout warning">
+      <span class="callout-icon">⚠️</span>
+      <div class="callout-body">
+        <div class="callout-title">Seed inventory before creating reservations</div>
+        <p>The Redis stock counter must be primed with <code>POST /inventory</code> before any reservation can succeed. An unseeded product causes every reservation attempt to return <strong>409 Conflict</strong>.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- TECH STACK -->
+  <section id="tech-stack">
+    <h2>Tech Stack</h2>
+    <table>
+      <thead><tr><th>Concern</th><th>Choice</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td>Framework</td><td>NestJS 11</td><td>Modular DI, decorator-based, first-class TypeScript</td></tr>
+        <tr><td>ORM</td><td>TypeORM 0.3</td><td>Repository pattern, entity decorators, migrations</td></tr>
+        <tr><td>Database</td><td>PostgreSQL 15</td><td>ACID transactions, SELECT FOR UPDATE for pessimistic locking</td></tr>
+        <tr><td>Cache / counters</td><td>Redis 7 (ioredis)</td><td>Atomic Lua script for stock decrement; sub-millisecond throughput</td></tr>
+        <tr><td>Job queue</td><td>BullMQ (bull 4)</td><td>Reliable 2-minute expiry jobs with retries and backoff</td></tr>
+        <tr><td>Events</td><td>@nestjs/event-emitter</td><td>In-process pub/sub for domain event listeners</td></tr>
+        <tr><td>Validation</td><td>class-validator + class-transformer</td><td>DTO validation via decorators, global ValidationPipe</td></tr>
+        <tr><td>Security</td><td>Helmet + ThrottlerModule</td><td>HTTP headers hardening, rate limiting (200/min default, 100/min on POST /reservations)</td></tr>
+        <tr><td>Observability</td><td>LoggingInterceptor + Terminus health</td><td>Structured request/response logs with X-Request-Id; /health endpoint</td></tr>
+        <tr><td>Locking</td><td>async-mutex</td><td>In-process mutex serialises concurrent requests within a Node.js worker</td></tr>
+        <tr><td>Docs</td><td>@nestjs/swagger</td><td>Auto-generated OpenAPI spec at /api</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- API REFERENCE -->
+  <section id="api">
+    <h2>API Reference</h2>
+
+    <h3>Reservations</h3>
+    <div class="endpoint"><span class="method post">POST</span><span class="endpoint-path">/reservations</span><span class="endpoint-desc">Create a reservation — 201 Created · 409 out of stock</span></div>
+    <div class="endpoint"><span class="method get">GET</span><span class="endpoint-path">/reservations</span><span class="endpoint-desc">Paginated list · query: status?, offset, limit</span></div>
+    <div class="endpoint"><span class="method get">GET</span><span class="endpoint-path">/reservations/:id</span><span class="endpoint-desc">Single reservation by UUID</span></div>
+    <div class="endpoint"><span class="method post">POST</span><span class="endpoint-path">/reservations/:id/confirm</span><span class="endpoint-desc">Confirm — ACTIVE → CONFIRMED</span></div>
+    <div class="endpoint"><span class="method delete">DELETE</span><span class="endpoint-path">/reservations/:id</span><span class="endpoint-desc">Cancel — ACTIVE → CANCELLED</span></div>
+    <div class="endpoint"><span class="method get">GET</span><span class="endpoint-path">/reservations/:id/logs</span><span class="endpoint-desc">Status transition history</span></div>
+
+    <h3>Inventory</h3>
+    <div class="endpoint"><span class="method post">POST</span><span class="endpoint-path">/inventory</span><span class="endpoint-desc">Upsert product + prime Redis stock counter</span></div>
+    <div class="endpoint"><span class="method get">GET</span><span class="endpoint-path">/inventory</span><span class="endpoint-desc">List all products</span></div>
+    <div class="endpoint"><span class="method get">GET</span><span class="endpoint-path">/inventory/:productId/audit-logs</span><span class="endpoint-desc">Paginated inventory mutation history · query: action?, offset, limit</span></div>
+
+    <h3>Health</h3>
+    <div class="endpoint"><span class="method get">GET</span><span class="endpoint-path">/health</span><span class="endpoint-desc">Database + Redis health check (Terminus)</span></div>
+    <div class="endpoint"><span class="method get">GET</span><span class="endpoint-path">/health/circuit-breaker</span><span class="endpoint-desc">Returns circuit breaker state: CLOSED | OPEN | HALF_OPEN</span></div>
+
+    <h3>Rate limiting</h3>
+    <table>
+      <thead><tr><th>Endpoint</th><th>Limit</th></tr></thead>
+      <tbody>
+        <tr><td><code>POST /reservations</code></td><td>100 req / min / IP</td></tr>
+        <tr><td>All other endpoints</td><td>200 req / min / IP</td></tr>
+        <tr><td><code>GET /health</code></td><td>Exempt</td></tr>
+      </tbody>
+    </table>
+
+    <h3>DTOs</h3>
+<pre><code><span class="cm">// POST /reservations body</span>
+<span class="kw">class</span> <span class="ty">CreateReservationDto</span> {
+  <span class="at">@IsUUID() @IsNotEmpty()</span>  productId: <span class="ty">string</span>;
+  <span class="at">@IsUUID() @IsNotEmpty()</span>  userId:    <span class="ty">string</span>;
+  <span class="at">@IsInt() @Min(1) @Max(100)</span> quantity:  <span class="ty">number</span>;
+}
+
+<span class="cm">// POST /inventory body</span>
+<span class="kw">class</span> <span class="ty">UpsertInventoryDto</span> {
+  <span class="at">@IsUUID() @IsNotEmpty()</span>      productId:  <span class="ty">string</span>;
+  <span class="at">@IsString() @IsNotEmpty()</span>    name:       <span class="ty">string</span>;
+  <span class="at">@IsInt() @Min(0) @Max(100000)</span> totalStock: <span class="ty">number</span>;
+}</code></pre>
+  </section>
+
+  <!-- LAYER MAP -->
+  <section id="layers">
+    <h2>Layer Map</h2>
+    <p>The backend mirrors the same DDD layering as the frontend. Dependencies only point inward — outer layers import from inner ones, never the reverse.</p>
+
+    <div class="arch-diagram">
+      <div class="arch-layer layer-pres">
+        <div class="arch-label">Presentation</div>
+        <div class="arch-body">
+          <span class="arch-chip">ReservationController</span>
+          <span class="arch-chip">InventoryController</span>
+          <span class="arch-chip">HealthController</span>
+        </div>
+      </div>
+      <div class="arch-layer layer-app">
+        <div class="arch-label">Application</div>
+        <div class="arch-body">
+          <span class="arch-chip">ReservationService</span>
+          <span class="arch-chip">ExpirySchedulerListener</span>
+          <span class="arch-chip">StockReleaseListener</span>
+          <span class="arch-chip">StatusLogListener</span>
+          <span class="arch-chip">InventoryAuditLogListener</span>
+          <span class="arch-chip">DTOs</span>
+        </div>
+      </div>
+      <div class="arch-layer layer-dom">
+        <div class="arch-label">Domain</div>
+        <div class="arch-body">
+          <span class="arch-chip">Reservation entity</span>
+          <span class="arch-chip">Inventory entity</span>
+          <span class="arch-chip">ReservationStatus enum</span>
+          <span class="arch-chip">IReservationRepository</span>
+          <span class="arch-chip">IInventoryRepository</span>
+          <span class="arch-chip">Domain Events ×4</span>
+          <span class="arch-chip">OutOfStockException</span>
+          <span class="arch-chip">InvalidStateException</span>
+        </div>
+      </div>
+      <div class="arch-layer layer-inf">
+        <div class="arch-label">Infrastructure</div>
+        <div class="arch-body">
+          <span class="arch-chip">TypeOrmReservationRepository</span>
+          <span class="arch-chip">TypeOrmInventoryRepository</span>
+          <span class="arch-chip">RedisStockService</span>
+          <span class="arch-chip">CircuitBreakerService</span>
+          <span class="arch-chip">MutexService</span>
+          <span class="arch-chip">ExpiryProcessor (BullMQ)</span>
+        </div>
+      </div>
+      <div class="arch-layer layer-com">
+        <div class="arch-label">Common</div>
+        <div class="arch-body">
+          <span class="arch-chip">LoggingInterceptor</span>
+          <span class="arch-chip">RedisHealthIndicator</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FILE TREE -->
+  <section id="file-tree">
+    <h2>File Tree</h2>
+    <div class="file-tree">
+<span class="dir">src/</span>
+├── <span class="file">main.ts</span>                    <span class="note">Bootstrap: Helmet, CORS, Swagger, ValidationPipe, shutdown hooks</span>
+├── <span class="file">app.module.ts</span>              <span class="note">Root module: TypeORM, EventEmitter, Bull, Throttler, all providers</span>
+│
+├── <span class="dir">domain/</span>                     <span class="note">Pure business logic — no NestJS / TypeORM imports here</span>
+│   ├── <span class="dir">entities/</span>
+│   │   ├── <span class="hl">reservation.entity.ts</span>    <span class="note">Aggregate root with state machine transitions</span>
+│   │   ├── <span class="hl">inventory.entity.ts</span>      <span class="note">availableStock getter, optimistic locking (version)</span>
+│   │   ├── <span class="file">reservation-status-log.entity.ts</span>
+│   │   └── <span class="file">inventory-audit-log.entity.ts</span>
+│   ├── <span class="dir">value-objects/</span>
+│   │   └── <span class="file">reservation-status.enum.ts</span>
+│   ├── <span class="dir">events/</span>
+│   │   ├── <span class="file">reservation-created.event.ts</span>
+│   │   ├── <span class="file">reservation-confirmed.event.ts</span>
+│   │   ├── <span class="file">reservation-cancelled.event.ts</span>
+│   │   └── <span class="file">reservation-expired.event.ts</span>
+│   ├── <span class="dir">exceptions/</span>
+│   │   ├── <span class="file">out-of-stock.exception.ts</span>   <span class="note">extends ConflictException → 409</span>
+│   │   └── <span class="file">invalid-state.exception.ts</span>   <span class="note">extends BadRequestException</span>
+│   └── <span class="dir">interfaces/</span>
+│       ├── <span class="file">reservation-repository.interface.ts</span>
+│       └── <span class="file">inventory-repository.interface.ts</span>
+│
+├── <span class="dir">application/</span>
+│   ├── <span class="dir">services/</span>
+│   │   └── <span class="hl">reservation.service.ts</span>   <span class="note">Core orchestrator — dual-path, circuit breaker routing</span>
+│   ├── <span class="dir">listeners/</span>
+│   │   ├── <span class="file">expiry-scheduler.listener.ts</span>  <span class="note">Enqueues BullMQ expiry job on ReservationCreated</span>
+│   │   ├── <span class="file">stock-release.listener.ts</span>     <span class="note">Releases/confirms stock on Cancel/Expire/Confirm</span>
+│   │   ├── <span class="file">status-log.listener.ts</span>        <span class="note">Writes state-change audit rows</span>
+│   │   └── <span class="file">inventory-audit-log.listener.ts</span><span class="note">Writes inventory mutation history</span>
+│   └── <span class="dir">dto/</span>
+│       ├── <span class="file">create-reservation.dto.ts</span>
+│       ├── <span class="file">reservation-response.dto.ts</span>
+│       ├── <span class="file">get-reservations-query.dto.ts</span>
+│       ├── <span class="file">get-audit-logs-query.dto.ts</span>
+│       └── <span class="file">pagination.dto.ts</span>
+│
+├── <span class="dir">infrastructure/</span>
+│   ├── <span class="dir">redis/</span>
+│   │   ├── <span class="hl">redis-stock.service.ts</span>   <span class="note">Lua atomic decrement, increment, setStock, ping</span>
+│   │   ├── <span class="file">redis.module.ts</span>
+│   │   └── <span class="file">redis.constants.ts</span>
+│   ├── <span class="dir">circuit-breaker/</span>
+│   │   ├── <span class="hl">circuit-breaker.service.ts</span>  <span class="note">CLOSED/OPEN/HALF_OPEN state machine, 5-failure threshold</span>
+│   │   └── <span class="file">circuit-breaker.module.ts</span>
+│   ├── <span class="dir">mutex/</span>
+│   │   └── <span class="hl">mutex.service.ts</span>         <span class="note">Per-product async-mutex for within-process serialisation</span>
+│   ├── <span class="dir">persistence/</span>
+│   │   ├── <span class="file">typeorm-reservation.repository.ts</span>
+│   │   └── <span class="file">typeorm-inventory.repository.ts</span>
+│   └── <span class="dir">queue/</span>
+│       ├── <span class="file">expiry.queue.ts</span>
+│       └── <span class="hl">expiry.processor.ts</span>      <span class="note">Processes expired reservations, dispatches domain events</span>
+│
+├── <span class="dir">presentation/</span>
+│   └── <span class="dir">controllers/</span>
+│       ├── <span class="file">reservation.controller.ts</span>
+│       └── <span class="file">inventory.controller.ts</span>
+│
+├── <span class="dir">health/</span>
+│   ├── <span class="file">health.controller.ts</span>
+│   ├── <span class="file">health.module.ts</span>
+│   └── <span class="file">redis-health.indicator.ts</span>
+│
+└── <span class="dir">common/</span>
+    └── <span class="dir">interceptors/</span>
+        └── <span class="file">logging.interceptor.ts</span>   <span class="note">X-Request-Id, structured req/res logs</span>
+    </div>
+  </section>
+
+  <!-- DIAGRAMS -->
+  <h2 style="margin-top:56px">Concept Diagrams</h2>
+  <p>Interactive diagrams illustrating the key architectural patterns of the backend service.</p>
+
+  <!-- Diagram 1 — Layer Dependencies -->
+  <section id="diag-layers">
+    <h3>1 — Layer Dependency Graph</h3>
+    <p>Dependencies only flow inward. Infrastructure and Presentation both depend on Domain interfaces, never the other way around.</p>
+    <div class="mermaid-wrap">
+      <div class="mermaid-label">arrows = "depends on / imports from"</div>
+      <div class="mermaid">
+flowchart TD
+    PR["🌐 Presentation\nReservationController\nInventoryController"]
+    AP["⚙️ Application\nReservationService\nEvent Listeners"]
+    DO["🏛️ Domain\nEntities · Events · Exceptions\nRepository Interfaces"]
+    IN["🔌 Infrastructure\nTypeORM Repos · Redis · BullMQ\nCircuitBreaker · Mutex"]
+    CO["🛠️ Common\nLoggingInterceptor"]
+
+    PR -->|orchestrates| AP
+    AP -->|depends on interfaces| DO
+    IN -->|implements interfaces from| DO
+    PR -->|uses DTOs from| AP
+    CO -->|wraps| PR
+
+    style PR fill:#162030,stroke:#4cc9f0,color:#4cc9f0
+    style AP fill:#162a22,stroke:#06d6a0,color:#06d6a0
+    style DO fill:#2a2214,stroke:#f0b429,color:#f0b429
+    style IN fill:#201630,stroke:#b5a4ff,color:#b5a4ff
+    style CO fill:#2a1e12,stroke:#ff9f1c,color:#ff9f1c
+      </div>
+    </div>
+  </section>
+
+  <!-- Diagram 2 — Reservation State Machine -->
+  <section id="diag-reservation">
+    <h3>2 — Reservation State Machine</h3>
+    <p>The <code>Reservation</code> aggregate root enforces all transitions. Calling a method on a reservation in an invalid state throws <code>InvalidStateException</code> → HTTP 409.</p>
+    <div class="mermaid-wrap">
+      <div class="mermaid-label">stateDiagram — reservation lifecycle</div>
+      <div class="mermaid">
+stateDiagram-v2
+    [*] --> ACTIVE : POST /reservations\n(stock available)
+    ACTIVE --> CONFIRMED : POST /reservations/:id/confirm\nreservation.confirm()
+    ACTIVE --> CANCELLED : DELETE /reservations/:id\nreservation.cancel()
+    ACTIVE --> EXPIRED  : BullMQ job after 2 min\nreservation.expire()
+
+    CONFIRMED --> [*] : Stock moves to confirmedSales
+    CANCELLED --> [*] : Stock released back to Redis
+    EXPIRED   --> [*] : Stock released back to Redis
+
+    note right of ACTIVE : canConfirm = true\ncanCancel  = true
+    note right of CONFIRMED : confirmedSales += quantity\nactiveReservations -= quantity
+    note right of CANCELLED : activeReservations -= quantity\nRedis.increment(quantity)
+    note right of EXPIRED   : activeReservations -= quantity\nRedis.increment(quantity)
+      </div>
+    </div>
+  </section>
+
+  <!-- Diagram 3 — Concurrency Strategy -->
+  <section id="diag-concurrency">
+    <h3>3 — Dual-Path Concurrency Strategy</h3>
+    <p>Two layers of protection prevent overselling. Redis Lua is the fast path; Mutex + SELECT FOR UPDATE is the reliable fallback when Redis is unavailable.</p>
+    <div class="mermaid-wrap">
+      <div class="mermaid-label">flowchart — reservation creation routing</div>
+      <div class="mermaid">
+flowchart TD
+    A([POST /reservations]) --> B{Circuit Breaker\nstate?}
+
+    B -- CLOSED / HALF_OPEN --> C[Redis Lua Script\natomicDecrement]
+    C -- success --> D[Transaction:\nSELECT FOR UPDATE inventory\nincrement activeReservations\nINSERT reservation]
+    C -- failure\n5 consecutive fails --> E[recordFailure\nopen circuit]
+    E --> F
+
+    B -- OPEN --> F[Fallback Path\nmutex.runExclusive per productId]
+    F --> G[Transaction:\nSELECT FOR UPDATE inventory\ncheck availableStock manually\nincrement activeReservations\nINSERT reservation]
+
+    D --> H[dispatchEvents\nReservationCreatedEvent]
+    G --> H
+    H --> I([201 Created])
+
+    C -- stock = 0 --> J([409 OutOfStockException])
+    G -- stock = 0 --> J
+
+    style A fill:#162030,stroke:#4cc9f0,color:#4cc9f0
+    style B fill:#2a2214,stroke:#f0b429,color:#f0b429
+    style C fill:#261830,stroke:#b5a4ff,color:#b5a4ff
+    style F fill:#161e28,stroke:#b5a4ff,color:#b5a4ff
+    style D fill:#162a22,stroke:#06d6a0,color:#06d6a0
+    style G fill:#162a22,stroke:#06d6a0,color:#06d6a0
+    style I fill:#162a22,stroke:#06d6a0,color:#06d6a0
+    style J fill:#2a1216,stroke:#ef476f,color:#ef476f
+    style E fill:#2a1216,stroke:#ef476f,color:#ef476f
+      </div>
+    </div>
+
+    <div class="callout gold">
+      <span class="callout-icon">⭐</span>
+      <div class="callout-body">
+        <div class="callout-title">Why two layers?</div>
+        <p>
+          Redis Lua is atomic and fast — ideal for high-concurrency stock decrement. But Redis can fail.
+          When the circuit opens, the fallback uses PostgreSQL's <code>SELECT FOR UPDATE</code> combined
+          with an in-process <code>Mutex</code> to serialise concurrent requests for the same product within a single Node.js process.
+          Together they guarantee no overselling regardless of Redis availability.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Diagram 4 — Circuit Breaker -->
+  <section id="diag-circuit">
+    <h3>4 — Circuit Breaker State Machine</h3>
+    <p>The circuit breaker routes requests away from Redis when it detects repeated failures, then probes for recovery after a 30-second timeout.</p>
+    <div class="mermaid-wrap">
+      <div class="mermaid-label">stateDiagram — circuit breaker</div>
+      <div class="mermaid">
+stateDiagram-v2
+    [*] --> CLOSED : Initial state
+    CLOSED --> OPEN : recordFailure() × 5\n(FAILURE_THRESHOLD reached)
+    OPEN --> HALF_OPEN : 30s recovery timeout elapsed\n(nextAttemptAt passed)
+    HALF_OPEN --> CLOSED : recordSuccess()\n(probe request succeeded)
+    HALF_OPEN --> OPEN  : recordFailure()\n(probe request failed)
+
+    note right of CLOSED   : Uses Redis Lua path
+    note right of OPEN     : Falls back to Mutex + DB
+    note right of HALF_OPEN : Allows one probe request\nthrough the Redis path
+      </div>
+    </div>
+
+    <table>
+      <thead><tr><th>Constant</th><th>Value</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td><code>FAILURE_THRESHOLD</code></td><td>5</td><td>Consecutive Redis failures before opening</td></tr>
+        <tr><td><code>RECOVERY_TIMEOUT_MS</code></td><td>30 000 ms</td><td>How long to stay OPEN before probing</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Diagram 5 — EDA -->
+  <section id="diag-eda">
+    <h3>5 — Event-Driven Architecture</h3>
+    <p>After each state transition the <code>Reservation</code> entity collects domain events. <code>ReservationService.dispatchEvents()</code> emits them via <code>EventEmitter2</code>. Independent listeners react without coupling to the service.</p>
+    <div class="mermaid-wrap">
+      <div class="mermaid-label">flowchart — event producers and consumers</div>
+      <div class="mermaid">
+flowchart LR
+    subgraph Producers
+      S["ReservationService\n(reserve / confirm / cancel)"]
+      P["ExpiryProcessor\n(BullMQ job)"]
+    end
+
+    subgraph Events
+      E1["ReservationCreatedEvent"]
+      E2["ReservationConfirmedEvent"]
+      E3["ReservationCancelledEvent"]
+      E4["ReservationExpiredEvent"]
+    end
+
+    subgraph Listeners
+      L1["ExpirySchedulerListener\n→ enqueue BullMQ job"]
+      L2["StockReleaseListener\n→ release / confirm stock"]
+      L3["StatusLogListener\n→ write transition row"]
+      L4["InventoryAuditLogListener\n→ write audit row"]
+    end
+
+    S -->|emit| E1 & E2 & E3
+    P -->|emit| E4
+
+    E1 --> L1 & L3 & L4
+    E2 --> L2 & L3 & L4
+    E3 --> L2 & L3 & L4
+    E4 --> L2 & L3 & L4
+
+    style S fill:#162030,stroke:#4cc9f0,color:#4cc9f0
+    style P fill:#162030,stroke:#4cc9f0,color:#4cc9f0
+    style E1 fill:#2a2214,stroke:#f0b429,color:#f0b429
+    style E2 fill:#2a2214,stroke:#f0b429,color:#f0b429
+    style E3 fill:#2a2214,stroke:#f0b429,color:#f0b429
+    style E4 fill:#2a2214,stroke:#f0b429,color:#f0b429
+    style L1 fill:#162a22,stroke:#06d6a0,color:#06d6a0
+    style L2 fill:#162a22,stroke:#06d6a0,color:#06d6a0
+    style L3 fill:#162a22,stroke:#06d6a0,color:#06d6a0
+    style L4 fill:#162a22,stroke:#06d6a0,color:#06d6a0
+      </div>
+    </div>
+  </section>
+
+  <!-- Diagram 6 — Full sequence -->
+  <section id="diag-sequence">
+    <h3>6 — Full Request Sequence (POST /reservations)</h3>
+    <p>End-to-end trace of a successful reservation creation through the Redis path.</p>
+    <div class="mermaid-wrap">
+      <div class="mermaid-label">sequenceDiagram — happy path</div>
+      <div class="mermaid">
+sequenceDiagram
+    participant Client
+    participant Controller as ReservationController
+    participant Service as ReservationService
+    participant CB as CircuitBreaker
+    participant Redis as RedisStock
+    participant DB as PostgreSQL
+    participant EE as EventEmitter2
+    participant Queue as BullMQ
+
+    Client->>Controller: POST /reservations {productId, userId, quantity}
+    Controller->>Service: reserve(dto)
+    Service->>CB: isOpen()?
+    CB-->>Service: false (CLOSED)
+    Service->>Redis: atomicDecrement(productId, qty)
+    Redis-->>Service: success (stock decremented)
+    Service->>CB: recordSuccess()
+    Service->>DB: BEGIN TX
+    Service->>DB: SELECT inventory FOR UPDATE
+    DB-->>Service: inventory row locked
+    Service->>DB: inventory.incrementActiveReservations()
+    Service->>DB: INSERT reservation (ACTIVE, expiresAt = now+2min)
+    Service->>DB: COMMIT
+    Service->>EE: emit ReservationCreatedEvent
+    EE->>Queue: ExpirySchedulerListener → add job (delay 2min)
+    EE->>DB: StatusLogListener → INSERT status_log (null → ACTIVE)
+    EE->>DB: InventoryAuditLogListener → INSERT audit_log (RESERVED)
+    Service-->>Controller: Reservation entity
+    Controller-->>Client: 201 ReservationResponseDto
+      </div>
+    </div>
+  </section>
+
+  <!-- DOMAIN -->
+  <section id="domain">
+    <h2>Domain Layer</h2>
+    <p>Pure business logic with no framework dependencies. This is what makes the system portable and testable in isolation.</p>
+
+    <h3>Reservation entity — state machine</h3>
+<pre><code><span class="cm">// Factory method — only way to create a reservation</span>
+<span class="kw">static</span> <span class="fn">create</span>(productId, productName, userId, quantity): <span class="ty">Reservation</span> {
+  <span class="cm">// sets status = ACTIVE, expiresAt = now + 2min</span>
+  <span class="cm">// adds ReservationCreatedEvent to events[]</span>
+}
+
+<span class="cm">// Transitions — throw InvalidStateException if not ACTIVE</span>
+<span class="fn">confirm</span>(): <span class="kw">void</span>  <span class="cm">// ACTIVE → CONFIRMED + ReservationConfirmedEvent</span>
+<span class="fn">cancel</span>():  <span class="kw">void</span>  <span class="cm">// ACTIVE → CANCELLED + ReservationCancelledEvent</span>
+<span class="fn">expire</span>():  <span class="kw">void</span>  <span class="cm">// ACTIVE → EXPIRED  + ReservationExpiredEvent</span></code></pre>
+
+    <h3>Inventory entity — stock formula</h3>
+<pre><code><span class="cm">// availableStock is always derived, never stored directly</span>
+get <span class="fn">availableStock</span>(): <span class="ty">number</span> {
+  <span class="kw">return</span> this.totalStock - this.confirmedSales - this.activeReservations;
+}
+
+<span class="cm">// Called when a reservation becomes ACTIVE</span>
+<span class="fn">incrementActiveReservations</span>(): <span class="kw">void</span>
+
+<span class="cm">// Called when ACTIVE → CANCELLED or EXPIRED</span>
+<span class="fn">decrementActiveReservations</span>(): <span class="kw">void</span>
+
+<span class="cm">// Called when ACTIVE → CONFIRMED (stock is now sold)</span>
+<span class="fn">confirmSale</span>(): <span class="kw">void</span>  <span class="cm">// activeReservations-- and confirmedSales++</span></code></pre>
+
+    <h3>Domain exceptions → HTTP codes</h3>
+    <table>
+      <thead><tr><th>Exception class</th><th>Extends</th><th>HTTP</th><th>When</th></tr></thead>
+      <tbody>
+        <tr><td><code>OutOfStockException</code></td><td><code>ConflictException</code></td><td>409</td><td>Redis returns ≤0 or DB availableStock &lt; requested</td></tr>
+        <tr><td><code>InvalidStateException</code></td><td><code>BadRequestException</code></td><td>400</td><td>Entity transition called on wrong status</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- APPLICATION -->
+  <section id="application">
+    <h2>Application Layer</h2>
+
+    <h3>ReservationService — routing logic</h3>
+<pre><code><span class="kw">async</span> <span class="fn">reserve</span>(dto: <span class="ty">CreateReservationDto</span>): <span class="ty">Promise</span>&lt;<span class="ty">Reservation</span>&gt; {
+  <span class="kw">if</span> (this.circuitBreaker.<span class="fn">isOpen</span>()) {
+    <span class="kw">return</span> this.<span class="fn">reserveWithFallback</span>(dto);   <span class="cm">// Mutex + SELECT FOR UPDATE</span>
+  }
+  <span class="kw">try</span> {
+    <span class="kw">return await</span> this.<span class="fn">reserveWithRedis</span>(dto);   <span class="cm">// Lua atomic decrement</span>
+  } <span class="kw">catch</span> (e) {
+    this.circuitBreaker.<span class="fn">recordFailure</span>();
+    <span class="kw">return</span> this.<span class="fn">reserveWithFallback</span>(dto);
+  }
+}</code></pre>
+
+    <h3>Event listeners</h3>
+    <table>
+      <thead><tr><th>Listener</th><th>Listens to</th><th>Does</th></tr></thead>
+      <tbody>
+        <tr><td><code>ExpirySchedulerListener</code></td><td>ReservationCreated</td><td>Adds BullMQ job with 2-min delay; job ID is idempotent (<code>expiry:{id}</code>)</td></tr>
+        <tr><td><code>StockReleaseListener</code></td><td>Cancelled, Expired</td><td>DB transaction: decrements activeReservations + Redis increment</td></tr>
+        <tr><td><code>StockReleaseListener</code></td><td>Confirmed</td><td>DB transaction: <code>confirmSale()</code> — moves activeReservations → confirmedSales</td></tr>
+        <tr><td><code>StatusLogListener</code></td><td>All 4 events</td><td>Writes a <code>reservation_status_log</code> row</td></tr>
+        <tr><td><code>InventoryAuditLogListener</code></td><td>All 4 events</td><td>Writes an <code>inventory_audit_log</code> row with quantityDelta</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- INFRASTRUCTURE -->
+  <section id="infrastructure">
+    <h2>Infrastructure Layer</h2>
+
+    <h3>RedisStockService — Lua atomic decrement</h3>
+<pre><code><span class="cm">-- Atomic: read + compare + decrement in a single Redis operation</span>
+<span class="kw">local</span> stock = tonumber(redis.call(<span class="str">'GET'</span>, KEYS[1]))
+<span class="kw">if</span> stock == <span class="kw">nil</span>                    <span class="kw">then return</span> <span class="nu">-1</span> <span class="kw">end</span>  <span class="cm">-- key not seeded</span>
+<span class="kw">if</span> stock >= tonumber(ARGV[1])      <span class="kw">then</span>
+  redis.call(<span class="str">'DECRBY'</span>, KEYS[1], ARGV[1])
+  <span class="kw">return</span> <span class="nu">1</span>                                           <span class="cm">-- success</span>
+<span class="kw">end</span>
+<span class="kw">return</span> <span class="nu">0</span>                                             <span class="cm">-- insufficient stock</span></code></pre>
+
+    <h3>CircuitBreakerService</h3>
+    <table>
+      <thead><tr><th>Method</th><th>Behaviour</th></tr></thead>
+      <tbody>
+        <tr><td><code>isOpen()</code></td><td>Returns <code>true</code> if OPEN and <code>nextAttemptAt</code> hasn't elapsed. Transitions OPEN → HALF_OPEN silently when timeout passes (returns <code>false</code> to allow probe).</td></tr>
+        <tr><td><code>recordFailure()</code></td><td>Increments failure count. Opens circuit at threshold. If HALF_OPEN, re-opens immediately.</td></tr>
+        <tr><td><code>recordSuccess()</code></td><td>If HALF_OPEN, calls <code>reset()</code> → back to CLOSED.</td></tr>
+        <tr><td><code>reset()</code></td><td>Clears failure count and <code>nextAttemptAt</code>, sets state to CLOSED.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>MutexService</h3>
+    <p>Maintains a <code>Map&lt;productId, Mutex&gt;</code>. <code>runExclusive(productId, fn)</code> serialises all concurrent requests for the same product within a single Node.js process, preventing race conditions when Redis is unavailable.</p>
+
+    <h3>ExpiryProcessor (BullMQ)</h3>
+<pre><code><span class="at">@Processor(EXPIRY_QUEUE_NAME)</span>
+<span class="at">@OnWorkerEvent('completed')</span>
+<span class="kw">async</span> <span class="fn">process</span>(job: <span class="ty">Job</span>&lt;<span class="ty">ExpiryJobData</span>&gt;) {
+  <span class="kw">const</span> reservation = <span class="kw">await</span> this.reservationRepo.<span class="fn">findById</span>(job.data.reservationId);
+  <span class="kw">try</span> {
+    reservation.<span class="fn">expire</span>();        <span class="cm">// throws if already CONFIRMED / CANCELLED</span>
+    <span class="kw">await</span> this.reservationRepo.<span class="fn">save</span>(reservation);
+    <span class="kw">await</span> this.<span class="fn">dispatchEvents</span>(reservation);
+  } <span class="kw">catch</span> (e: <span class="ty">InvalidStateException</span>) {
+    <span class="cm">// Already in terminal state — skip gracefully</span>
+  }
+}</code></pre>
+  </section>
+
+  <!-- PRESENTATION -->
+  <section id="presentation">
+    <h2>Presentation Layer</h2>
+    <p>Controllers are thin — they validate input via DTOs, call service methods, and map entity responses to DTOs. No business logic here.</p>
+
+    <h3>ReservationController guards</h3>
+    <table>
+      <thead><tr><th>Decorator</th><th>Applied to</th><th>Effect</th></tr></thead>
+      <tbody>
+        <tr><td><code>@Throttle({ default: { limit: 100, ttl: 60000 } })</code></td><td><code>POST /reservations</code></td><td>100 requests/min per IP</td></tr>
+        <tr><td><code>@ParseUUIDPipe()</code></td><td>All <code>:id</code> params</td><td>Validates UUID format before hitting service</td></tr>
+        <tr><td><code>@HttpCode(201)</code></td><td>POST /reservations</td><td>Returns 201 Created (not default 200)</td></tr>
+      </tbody>
+    </table>
+
+    <h3>LoggingInterceptor</h3>
+    <p>Applied globally. Generates a <code>X-Request-Id</code> UUID header per request. Logs <code>[id] → METHOD URL</code> on ingress and <code>[id] ← METHOD URL STATUS (Xms)</code> on egress.</p>
+  </section>
+
+  <!-- CONCURRENCY DETAIL -->
+  <section id="concurrency">
+    <h2>Concurrency Strategy Deep Dive</h2>
+
+    <h3>Stock formula</h3>
+    <pre><code>availableStock = totalStock − confirmedSales − activeReservations</code></pre>
+    <p>
+      <code>totalStock</code> is the total units ever added.
+      <code>confirmedSales</code> counts units where payment is finalised.
+      <code>activeReservations</code> counts units currently held (but not yet confirmed or released).
+      This formula guarantees no double-counting across concurrent operations.
+    </p>
+
+    <h3>Layer 1 — Redis Lua script</h3>
+    <p>Atomic read-compare-decrement in a single Redis command. No round-trips. Ideal for high-throughput concurrent reservation creation. Returns <code>-1</code> if the key is unseeded (product not in Redis), <code>0</code> if insufficient stock, <code>1</code> on success.</p>
+
+    <h3>Layer 2 — Mutex + SELECT FOR UPDATE</h3>
+    <p>When Redis is unavailable (circuit OPEN), a product-scoped Mutex ensures only one coroutine at a time enters the critical section within this Node.js process. Inside the mutex, a <code>SELECT ... FOR UPDATE</code> transaction provides cross-process protection at the database level.</p>
+
+    <h3>Redis rehydration</h3>
+    <p>When Redis recovers (circuit transitions CLOSED via HALF_OPEN), <code>onRedisRecovery()</code> queries <code>getAllAvailableStock()</code> from the DB and calls <code>setStock()</code> for each product, bringing Redis back in sync with the source of truth.</p>
+
+    <div class="callout info">
+      <span class="callout-icon">ℹ️</span>
+      <div class="callout-body">
+        <div class="callout-title">Why not Redis alone?</div>
+        <p>Redis can fail, restart, or be evicted. If the counter is lost, the DB is still correct. The fallback path using PostgreSQL's MVCC + SELECT FOR UPDATE is the safety net that ensures no overselling even during Redis outages.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONVENTIONS -->
+  <section id="conventions">
+    <h2>Conventions &amp; Rules</h2>
+
+    <h3>Adding a new domain event</h3>
+    <div style="margin:16px 0 24px">
+      <p style="margin-bottom:8px"><strong>1.</strong> Create an event class in <code>src/domain/events/</code></p>
+      <p style="margin-bottom:8px"><strong>2.</strong> Add it to the Reservation entity's domain events collection in the appropriate transition method</p>
+      <p style="margin-bottom:8px"><strong>3.</strong> Create a listener in <code>src/application/listeners/</code> decorated with <code>@OnEvent('...')</code></p>
+      <p style="margin-bottom:0"><strong>4.</strong> Register the listener in <code>app.module.ts</code> providers</p>
+    </div>
+
+    <div class="callout tip">
+      <span class="callout-icon">✅</span>
+      <div class="callout-body">
+        <div class="callout-title">Never modify ReservationService to add side effects</div>
+        <p>Add a new <code>@OnEvent()</code> listener instead. The service is closed for modification (OCP). The event bus is the extension point.</p>
+      </div>
+    </div>
+
+    <h3>Repository injection</h3>
+    <p>Repositories are injected by Symbol token (<code>RESERVATION_REPOSITORY</code>, <code>INVENTORY_REPOSITORY</code>), not by class name. This enforces DIP — the service depends on the interface, not the TypeORM implementation.</p>
+<pre><code><span class="cm">// In app.module.ts</span>
+{ provide: <span class="ty">RESERVATION_REPOSITORY</span>, useClass: <span class="ty">TypeOrmReservationRepository</span> }
+
+<span class="cm">// In reservation.service.ts constructor</span>
+<span class="at">@Inject(RESERVATION_REPOSITORY)</span> <span class="kw">private readonly</span> repo: <span class="ty">IReservationRepository</span></code></pre>
+
+    <h3>Build gate</h3>
+    <div class="callout danger">
+      <span class="callout-icon">🚫</span>
+      <div class="callout-body">
+        <div class="callout-title">npm run build must exit 0 before any commit</div>
+        <p>Runs <code>nest build</code> (TypeScript strict). Unit, concurrency, and integration tests should all pass before merging.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    inventory-reservation (backend) &nbsp;·&nbsp; NestJS 11 · TypeORM · PostgreSQL · Redis · BullMQ &nbsp;·&nbsp; DDD + SOLID + EDA
+  </footer>
+
+</main>
+
+<script>
+  const sections = document.querySelectorAll('section[id]');
+  const links = document.querySelectorAll('.nav-link');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const active = document.querySelector('.nav-link[href="#' + entry.target.id + '"]');
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -75% 0px' });
+  sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>

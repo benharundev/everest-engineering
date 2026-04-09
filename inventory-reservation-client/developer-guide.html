@@ -1,0 +1,1780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Inventory Reservation — Frontend Developer Guide</title>
+<style>
+  :root {
+    --bg-base:     #0d0f12;
+    --bg-surface:  #13161b;
+    --bg-card:     #1a1e26;
+    --bg-card2:    #1f2430;
+    --border:      #2a2f3d;
+    --accent:      #3aecff;
+    --accent-dim:  rgba(58,236,255,0.12);
+    --accent-glow: rgba(58,236,255,0.25);
+    --green:       #00d17a;
+    --yellow:      #ffb520;
+    --red:         #ff3355;
+    --purple:      #a78bfa;
+    --text:        #e8eaf0;
+    --text-muted:  #7c8494;
+    --text-dim:    #4a5165;
+    --font-display:'Syne', system-ui, sans-serif;
+    --font-body:   'DM Sans', system-ui, sans-serif;
+    --font-mono:   'JetBrains Mono', 'Fira Code', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  body {
+    background: var(--bg-base);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.7;
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* ── Sidebar ── */
+  #sidebar {
+    width: 260px;
+    min-width: 260px;
+    background: var(--bg-surface);
+    border-right: 1px solid var(--border);
+    padding: 32px 0 40px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  #sidebar .brand {
+    padding: 0 24px 28px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 12px;
+  }
+
+  #sidebar .brand-title {
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  #sidebar .brand-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 3px;
+    font-family: var(--font-mono);
+  }
+
+  .nav-group-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-dim);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 18px 24px 6px;
+  }
+
+  .nav-link {
+    display: block;
+    padding: 7px 24px;
+    font-size: 13px;
+    color: var(--text-muted);
+    text-decoration: none;
+    border-left: 2px solid transparent;
+    transition: all 0.15s;
+  }
+
+  .nav-link:hover { color: var(--text); background: var(--bg-card); border-left-color: var(--border); }
+  .nav-link.active { color: var(--accent); border-left-color: var(--accent); background: var(--accent-dim); }
+
+  /* ── Content ── */
+  #content {
+    flex: 1;
+    max-width: 900px;
+    padding: 56px 64px 100px;
+    overflow-x: hidden;
+  }
+
+  /* ── Typography ── */
+  h1 {
+    font-family: var(--font-display);
+    font-size: 36px;
+    font-weight: 800;
+    color: var(--text);
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    margin-bottom: 12px;
+  }
+  h1 span { color: var(--accent); }
+
+  h2 {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    margin: 56px 0 18px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    scroll-margin-top: 24px;
+  }
+
+  h3 {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin: 32px 0 10px;
+    scroll-margin-top: 24px;
+  }
+
+  h4 {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin: 24px 0 8px;
+  }
+
+  p { margin-bottom: 14px; color: var(--text-muted); }
+  strong { color: var(--text); font-weight: 600; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .lead {
+    font-size: 16px;
+    color: var(--text-muted);
+    line-height: 1.75;
+    margin-bottom: 0;
+    max-width: 680px;
+  }
+
+  /* ── Hero badges ── */
+  .hero-meta { display: flex; gap: 10px; margin: 24px 0 0; flex-wrap: wrap; }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 6px; padding: 5px 12px;
+    font-family: var(--font-mono); font-size: 12px; color: var(--text-muted);
+  }
+  .hero-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+
+  /* ── Code ── */
+  pre {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 20px 24px; overflow-x: auto;
+    margin: 16px 0 24px; font-family: var(--font-mono);
+    font-size: 13px; line-height: 1.65; color: var(--text);
+  }
+  code {
+    font-family: var(--font-mono); font-size: 13px;
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 4px; padding: 2px 7px; color: var(--accent);
+  }
+  pre code { background: none; border: none; padding: 0; color: inherit; font-size: inherit; }
+
+  .kw  { color: #c792ea; }
+  .fn  { color: #82aaff; }
+  .str { color: #c3e88d; }
+  .cm  { color: #546e7a; font-style: italic; }
+  .ty  { color: #ffcb6b; }
+  .nu  { color: #f78c6c; }
+
+  /* ── Callouts ── */
+  .callout {
+    border-radius: 8px; padding: 16px 20px; margin: 20px 0;
+    display: flex; gap: 14px; align-items: flex-start; border: 1px solid;
+  }
+  .callout-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+  .callout-body { flex: 1; }
+  .callout-body p { margin-bottom: 0; font-size: 14px; }
+  .callout-title { font-weight: 600; margin-bottom: 4px; font-size: 13px; }
+  .callout.info    { background: rgba(58,236,255,0.06);  border-color: rgba(58,236,255,0.2);  }
+  .callout.info    .callout-title { color: var(--accent); }
+  .callout.tip     { background: rgba(0,209,122,0.06);   border-color: rgba(0,209,122,0.2);   }
+  .callout.tip     .callout-title { color: var(--green); }
+  .callout.warning { background: rgba(255,181,32,0.06);  border-color: rgba(255,181,32,0.2);  }
+  .callout.warning .callout-title { color: var(--yellow); }
+  .callout.danger  { background: rgba(255,51,85,0.06);   border-color: rgba(255,51,85,0.2);   }
+  .callout.danger  .callout-title { color: var(--red); }
+
+  /* ── Tables ── */
+  table { width: 100%; border-collapse: collapse; margin: 16px 0 24px; font-size: 13.5px; }
+  th {
+    background: var(--bg-card2); font-family: var(--font-mono);
+    font-size: 11px; font-weight: 600; color: var(--text-muted);
+    letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 10px 14px; border: 1px solid var(--border); text-align: left;
+  }
+  td { padding: 9px 14px; border: 1px solid var(--border); color: var(--text-muted); vertical-align: top; }
+  td code { font-size: 12px; }
+  tr:nth-child(even) td { background: rgba(255,255,255,0.015); }
+
+  /* ── Architecture layers ── */
+  .arch-diagram {
+    display: flex; flex-direction: column; margin: 24px 0;
+    border: 1px solid var(--border); border-radius: 10px; overflow: hidden;
+  }
+  .arch-layer {
+    display: flex; align-items: stretch;
+    border-bottom: 1px solid var(--border);
+  }
+  .arch-layer:last-child { border-bottom: none; }
+  .arch-label {
+    width: 180px; min-width: 180px; padding: 14px 18px;
+    font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    display: flex; align-items: center; border-right: 1px solid var(--border);
+  }
+  .arch-body { flex: 1; padding: 12px 18px; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+  .arch-chip {
+    background: var(--bg-card2); border: 1px solid var(--border);
+    border-radius: 5px; padding: 4px 10px;
+    font-family: var(--font-mono); font-size: 11.5px; color: var(--text-muted);
+  }
+  .arch-layer.components .arch-label { background: rgba(58,236,255,0.06);  color: var(--accent);  }
+  .arch-layer.components .arch-chip  { border-color: rgba(58,236,255,0.2);  color: var(--accent);  }
+  .arch-layer.presentation .arch-label { background: rgba(167,139,250,0.08); color: var(--purple); }
+  .arch-layer.presentation .arch-chip  { border-color: rgba(167,139,250,0.25); color: var(--purple); }
+  .arch-layer.application .arch-label { background: rgba(0,209,122,0.06);   color: var(--green);  }
+  .arch-layer.application .arch-chip  { border-color: rgba(0,209,122,0.2);   color: var(--green);  }
+  .arch-layer.events .arch-label { background: rgba(255,51,85,0.06);   color: var(--red);    }
+  .arch-layer.events .arch-chip  { border-color: rgba(255,51,85,0.2);   color: var(--red);    }
+  .arch-layer.domain .arch-label { background: rgba(255,181,32,0.06);  color: var(--yellow); }
+  .arch-layer.domain .arch-chip  { border-color: rgba(255,181,32,0.25); color: var(--yellow); }
+  .arch-layer.infra .arch-label { background: rgba(130,170,255,0.06); color: #82aaff; }
+  .arch-layer.infra .arch-chip  { border-color: rgba(130,170,255,0.2); color: #82aaff; }
+
+  /* ── Data flow ── */
+  .flow {
+    display: flex; align-items: center; gap: 0;
+    margin: 16px 0; overflow-x: auto; padding-bottom: 4px;
+  }
+  .flow-box {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 16px;
+    font-size: 12px; font-family: var(--font-mono); color: var(--text-muted);
+    text-align: center; white-space: nowrap; flex-shrink: 0;
+  }
+  .flow-box small { display: block; font-size: 10px; opacity: 0.65; margin-top: 2px; }
+  .flow-box.accent { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+  .flow-box.green  { border-color: var(--green);  color: var(--green);  background: rgba(0,209,122,0.08); }
+  .flow-box.yellow { border-color: var(--yellow); color: var(--yellow); background: rgba(255,181,32,0.08); }
+  .flow-box.purple { border-color: var(--purple); color: var(--purple); background: rgba(167,139,250,0.08); }
+  .flow-box.red    { border-color: var(--red);    color: var(--red);    background: rgba(255,51,85,0.08); }
+  .flow-arrow { font-size: 18px; color: var(--text-dim); padding: 0 6px; flex-shrink: 0; }
+
+  /* ── File tree ── */
+  .file-tree {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 20px 24px;
+    font-family: var(--font-mono); font-size: 12.5px; line-height: 1.9;
+    margin: 16px 0 24px;
+    white-space: pre;
+    overflow-x: auto;
+  }
+  .file-tree .dir  { color: var(--accent); }
+  .file-tree .file { color: var(--text-muted); }
+  .file-tree .note { color: var(--text-dim); font-style: italic; }
+  .file-tree .hl   { color: var(--green); }
+
+  /* ── Steps ── */
+  .steps { margin: 16px 0 24px; }
+  .step { display: flex; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--border); }
+  .step:last-child { border-bottom: none; }
+  .step-num {
+    width: 28px; height: 28px; min-width: 28px; border-radius: 50%;
+    background: var(--accent-dim); border: 1px solid rgba(58,236,255,0.3);
+    color: var(--accent); font-family: var(--font-mono); font-size: 12px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; margin-top: 2px;
+  }
+  .step-body { flex: 1; }
+  .step-title { font-weight: 600; color: var(--text); margin-bottom: 4px; font-size: 14px; }
+  .step-body p { margin-bottom: 0; font-size: 13.5px; }
+
+  /* ── Principle cards ── */
+  .principle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 20px 0; }
+  .principle-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 16px 18px;
+  }
+  .principle-card .p-tag {
+    display: inline-block; font-family: var(--font-mono); font-size: 10px; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 3px 8px; border-radius: 4px; margin-bottom: 10px;
+  }
+  .principle-card .p-title { font-weight: 600; color: var(--text); margin-bottom: 6px; font-size: 14px; }
+  .principle-card p { font-size: 13px; margin-bottom: 0; }
+  .p-ddd { background: rgba(255,181,32,0.12);  color: var(--yellow); }
+  .p-srp { background: rgba(58,236,255,0.12);  color: var(--accent); }
+  .p-dip { background: rgba(0,209,122,0.12);   color: var(--green);  }
+  .p-ocp { background: rgba(167,139,250,0.12); color: var(--purple); }
+  .p-eda { background: rgba(255,51,85,0.12);   color: var(--red);    }
+
+  /* ── Footer ── */
+  footer {
+    margin-top: 80px; padding-top: 24px; border-top: 1px solid var(--border);
+    font-size: 12px; color: var(--text-dim); font-family: var(--font-mono);
+  }
+
+  /* ── Mermaid diagrams ── */
+  .mermaid-wrap {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 28px 20px 20px;
+    margin: 20px 0 28px;
+    overflow-x: auto;
+  }
+  .mermaid-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-dim);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  .mermaid svg { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+
+  /* ── Responsive ── */
+  @media (max-width: 900px) {
+    #sidebar { display: none; }
+    #content { padding: 32px 24px 80px; }
+    .principle-grid { grid-template-columns: 1fr; }
+  }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'base',
+    themeVariables: {
+      background:       '#1a1e26',
+      primaryColor:     '#1f2430',
+      primaryTextColor: '#e8eaf0',
+      primaryBorderColor:'#2a2f3d',
+      lineColor:        '#3aecff',
+      secondaryColor:   '#13161b',
+      tertiaryColor:    '#1a1e26',
+      edgeLabelBackground:'#1a1e26',
+      clusterBkg:       '#13161b',
+      clusterBorder:    '#2a2f3d',
+      titleColor:       '#e8eaf0',
+      nodeBorder:       '#2a2f3d',
+      fontFamily:       'JetBrains Mono, Fira Code, monospace',
+      fontSize:         '13px',
+      signalColor:      '#3aecff',
+      signalTextColor:  '#e8eaf0',
+      actorBkg:         '#1f2430',
+      actorBorder:      '#3aecff',
+      actorTextColor:   '#e8eaf0',
+      actorLineColor:   '#2a2f3d',
+      activationBkgColor:'rgba(58,236,255,0.12)',
+      activationBorderColor:'#3aecff',
+      labelBoxBkgColor: '#1a1e26',
+      labelBoxBorderColor:'#2a2f3d',
+      labelTextColor:   '#e8eaf0',
+      loopTextColor:    '#7c8494',
+      noteBkgColor:     '#1f2430',
+      noteBorderColor:  '#ffb520',
+      noteTextColor:    '#e8eaf0',
+      fillType0:        '#1f2430',
+      fillType1:        '#13161b',
+    },
+    flowchart: { curve: 'basis', padding: 20 },
+    sequence:  { actorMargin: 60, messageMargin: 30, mirrorActors: false, useMaxWidth: true },
+  });
+</script>
+</head>
+<body>
+
+<!-- ═══════════════════════ SIDEBAR ═══════════════════════ -->
+<nav id="sidebar">
+  <div class="brand">
+    <div class="brand-title">Developer Guide</div>
+    <div class="brand-sub">inventory-reservation-client</div>
+  </div>
+
+  <div class="nav-group-label">Overview</div>
+  <a class="nav-link" href="#intro">Introduction</a>
+  <a class="nav-link" href="#quickstart">Quick Start</a>
+  <a class="nav-link" href="#tech-stack">Tech Stack</a>
+
+  <div class="nav-group-label">Architecture</div>
+  <a class="nav-link" href="#layers">Layer Map</a>
+  <a class="nav-link" href="#data-flow">Data Flow</a>
+  <a class="nav-link" href="#file-tree">File Tree</a>
+
+  <div class="nav-group-label">Layers</div>
+  <a class="nav-link" href="#domain">Domain</a>
+  <a class="nav-link" href="#application">Application</a>
+  <a class="nav-link" href="#events">Events (EDA)</a>
+  <a class="nav-link" href="#infrastructure">Infrastructure</a>
+  <a class="nav-link" href="#presentation">Presentation Hooks</a>
+  <a class="nav-link" href="#components">Components</a>
+
+  <div class="nav-group-label">Diagrams</div>
+  <a class="nav-link" href="#diag-layers">Layer Dependencies</a>
+  <a class="nav-link" href="#diag-dataflow">Data Flow</a>
+  <a class="nav-link" href="#diag-lifecycle">Reservation Lifecycle</a>
+  <a class="nav-link" href="#diag-domain">Domain Structure</a>
+  <a class="nav-link" href="#diag-usecase">Use Case Pattern</a>
+  <a class="nav-link" href="#diag-eda">EDA Pub/Sub</a>
+  <a class="nav-link" href="#diag-di">DI Container</a>
+  <a class="nav-link" href="#diag-solid">DDD · SOLID · EDA Map</a>
+
+  <div class="nav-group-label">References</div>
+  <a class="nav-link" href="#context-api">AppContext API</a>
+  <a class="nav-link" href="#design-system">Design System</a>
+  <a class="nav-link" href="#principles">DDD · SOLID · EDA</a>
+  <a class="nav-link" href="#howto">How-To Recipes</a>
+  <a class="nav-link" href="#conventions">Conventions</a>
+</nav>
+
+<!-- ═══════════════════════ CONTENT ═══════════════════════ -->
+<main id="content">
+
+  <!-- INTRO -->
+  <section id="intro">
+    <h1>Frontend <span>Developer Guide</span></h1>
+    <p class="lead">
+      Complete reference for engineers contributing to
+      <strong>inventory-reservation-client</strong> — a React 18 + TypeScript 5
+      single-page application built on Domain-Driven Design,
+      SOLID principles, and Event-Driven Architecture.
+    </p>
+    <div class="hero-meta">
+      <span class="hero-badge"><span class="dot"></span>React 18.3</span>
+      <span class="hero-badge"><span class="dot"></span>TypeScript 5.5 strict</span>
+      <span class="hero-badge"><span class="dot"></span>Vite 6</span>
+      <span class="hero-badge"><span class="dot"></span>DDD · SOLID · EDA</span>
+      <span class="hero-badge"><span class="dot"></span>Zero runtime deps beyond React</span>
+    </div>
+  </section>
+
+  <!-- QUICK START -->
+  <section id="quickstart">
+    <h2>Quick Start</h2>
+
+    <h3>Prerequisites</h3>
+    <table>
+      <thead><tr><th>Tool</th><th>Version</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>nvm</td><td>—</td><td>Node Version Manager — install from <a href="https://github.com/nvm-sh/nvm" target="_blank">nvm-sh/nvm</a></td></tr>
+        <tr><td>Node.js</td><td>22</td><td>Switched via <code>nvm use 22</code></td></tr>
+        <tr><td>npm</td><td>bundled with Node 22</td><td>No Yarn / pnpm needed</td></tr>
+        <tr><td>NestJS backend</td><td>—</td><td>Must be running on <code>http://localhost:3000</code> before use</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Install &amp; Run</h3>
+<pre><code><span class="cm"># 1. Switch to Node 22 (install if not present)</span>
+nvm install 22
+nvm use 22
+
+<span class="cm"># 2. Install dependencies</span>
+npm install
+
+<span class="cm"># 3. Start dev server (hot-reload at http://localhost:5173)</span>
+npm run dev
+
+<span class="cm"># 4. Production build — must pass before any commit</span>
+npm run build
+
+<span class="cm"># 5. Preview the built output</span>
+npm run preview</code></pre>
+
+    <h3>First-time setup</h3>
+    <p>
+      On first load the app reads <code>api_base</code> from <code>localStorage</code> (defaults to
+      <code>http://localhost:3000</code>). Change it anytime in the <strong>Settings</strong> tab — no
+      restart required.
+    </p>
+
+    <div class="callout tip">
+      <span class="callout-icon">✅</span>
+      <div class="callout-body">
+        <div class="callout-title">Seed inventory before creating reservations</div>
+        <p>The backend's Redis stock counter must be primed first. Open <strong>Settings → Seed Inventory</strong>
+        and add at least one product. A 409 Conflict on reservation creation means inventory is unseeded.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- TECH STACK -->
+  <section id="tech-stack">
+    <h2>Tech Stack</h2>
+    <table>
+      <thead><tr><th>Concern</th><th>Choice</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td>UI framework</td><td>React 18.3</td><td>Concurrent rendering, hooks-first API</td></tr>
+        <tr><td>Language</td><td>TypeScript 5.5 strict</td><td><code>noImplicitAny</code>, <code>strictNullChecks</code>, <code>noUnusedLocals</code> all on</td></tr>
+        <tr><td>Bundler</td><td>Vite 6</td><td>Sub-second HMR; native ESM dev server</td></tr>
+        <tr><td>Styling</td><td>CSS custom properties + inline styles</td><td>Zero dependency; Obsidian dark theme; no Tailwind, no CSS-in-JS</td></tr>
+        <tr><td>State</td><td>React Context + useState</td><td>No Redux/Zustand — app state is shallow; Context is sufficient</td></tr>
+        <tr><td>HTTP</td><td>Custom HttpClient wrapping fetch</td><td>No Axios; dynamic base URL from localStorage; lean bundle</td></tr>
+        <tr><td>Routing</td><td>Tab model in AppContext</td><td>No React Router — five tabs, no deep links needed</td></tr>
+        <tr><td>Testing</td><td>None yet</td><td>Repository interfaces designed for easy in-memory substitution when tests are added</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout info">
+      <span class="callout-icon">ℹ️</span>
+      <div class="callout-body">
+        <div class="callout-title">Zero runtime deps beyond React</div>
+        <p><code>package.json</code> dependencies contains only <code>react</code> and <code>react-dom</code>. UUID
+        generation, pub/sub, DI wiring, and HTTP are all hand-rolled in <code>src/</code>. This demonstrates
+        the patterns without library magic and keeps the bundle under 200 kB.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- LAYER MAP -->
+  <section id="layers">
+    <h2>Layer Map</h2>
+    <p>
+      The codebase is divided into six layers.
+      <strong>Dependencies only point inward</strong> — outer layers may import from inner layers,
+      but the reverse is never allowed. This enforces the Dependency Inversion Principle
+      at the architectural level.
+    </p>
+
+    <div class="arch-diagram">
+      <div class="arch-layer components">
+        <div class="arch-label">Components</div>
+        <div class="arch-body">
+          <span class="arch-chip">Dashboard</span>
+          <span class="arch-chip">ReservationsTab</span>
+          <span class="arch-chip">CreateForm</span>
+          <span class="arch-chip">SimulateTab</span>
+          <span class="arch-chip">SettingsTab</span>
+          <span class="arch-chip">Layout / *</span>
+          <span class="arch-chip">shared / *</span>
+        </div>
+      </div>
+      <div class="arch-layer presentation">
+        <div class="arch-label">Presentation</div>
+        <div class="arch-body">
+          <span class="arch-chip">useDashboard</span>
+          <span class="arch-chip">useReservations</span>
+          <span class="arch-chip">useCreateReservation</span>
+          <span class="arch-chip">useSimulate</span>
+          <span class="arch-chip">useInventory</span>
+        </div>
+      </div>
+      <div class="arch-layer application">
+        <div class="arch-label">Application</div>
+        <div class="arch-body">
+          <span class="arch-chip">CreateReservationUseCase</span>
+          <span class="arch-chip">ConfirmReservationUseCase</span>
+          <span class="arch-chip">CancelReservationUseCase</span>
+          <span class="arch-chip">GetReservationsUseCase</span>
+          <span class="arch-chip">GetDashboardStatsUseCase</span>
+          <span class="arch-chip">SeedInventoryUseCase</span>
+          <span class="arch-chip">SimulationService</span>
+        </div>
+      </div>
+      <div class="arch-layer events">
+        <div class="arch-label">Events (EDA)</div>
+        <div class="arch-body">
+          <span class="arch-chip">EventBus (singleton)</span>
+          <span class="arch-chip">ToastHandler</span>
+          <span class="arch-chip">RefreshHandler</span>
+        </div>
+      </div>
+      <div class="arch-layer domain">
+        <div class="arch-label">Domain</div>
+        <div class="arch-body">
+          <span class="arch-chip">Reservation entity</span>
+          <span class="arch-chip">Inventory entity</span>
+          <span class="arch-chip">ReservationStatus VO</span>
+          <span class="arch-chip">IReservationRepository</span>
+          <span class="arch-chip">IInventoryRepository</span>
+          <span class="arch-chip">INameStore</span>
+          <span class="arch-chip">Domain Events</span>
+          <span class="arch-chip">Domain Exceptions</span>
+        </div>
+      </div>
+      <div class="arch-layer infra">
+        <div class="arch-label">Infrastructure</div>
+        <div class="arch-body">
+          <span class="arch-chip">HttpClient</span>
+          <span class="arch-chip">ApiReservationRepository</span>
+          <span class="arch-chip">ApiInventoryRepository</span>
+          <span class="arch-chip">LocalStorageNameStore</span>
+          <span class="arch-chip">container.ts (DI wiring)</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout info">
+      <span class="callout-icon">ℹ️</span>
+      <div class="callout-body">
+        <div class="callout-title">The dependency rule</div>
+        <p>
+          <strong>Components → Hooks → Use Cases → Domain interfaces</strong>.
+          Infrastructure implements those interfaces from the outside.
+          Nothing in Domain or Application ever imports from Infrastructure, Components, or the Events layer.
+          Violations break DIP and must not be introduced.
+        </p>
+      </div>
+    </div>
+
+    <section id="diag-layers">
+    <h3>Diagram — Layer Dependency Graph</h3>
+    <p>Every arrow points inward. The Domain layer imports nothing — it is the stable core everything else depends on.</p>
+    <div class="mermaid-wrap">
+      <div class="mermaid-label">arrows = "depends on / imports from"</div>
+      <div class="mermaid">
+flowchart TD
+    C["🖥️ Components\nDashboard · Forms · Tabs · Shared"]
+    P["🪝 Presentation Hooks\nuseDashboard · useReservations · …"]
+    A["⚙️ Application\nUse Cases · SimulationService"]
+    EV["📡 Events\nEventBus · ToastHandler · RefreshHandler"]
+    D["🏛️ Domain\nEntities · VOs · Interfaces · Events · Exceptions"]
+    I["🔌 Infrastructure\nHttpClient · Repositories · NameStore · container.ts"]
+
+    C -->|calls hooks| P
+    P -->|calls execute| A
+    A -->|depends on interfaces| D
+    A -->|publishes events to| EV
+    EV -->|event types from| D
+    I -->|implements interfaces from| D
+    P -->|calls via container| I
+
+    style C fill:#1a2535,stroke:#3aecff,color:#3aecff
+    style P fill:#1e1a35,stroke:#a78bfa,color:#a78bfa
+    style A fill:#1a2b22,stroke:#00d17a,color:#00d17a
+    style EV fill:#2b1a1e,stroke:#ff3355,color:#ff3355
+    style D fill:#2b2614,stroke:#ffb520,color:#ffb520
+    style I fill:#1a2035,stroke:#82aaff,color:#82aaff
+      </div>
+    </div>
+    </section>
+  </section>
+
+  <!-- DATA FLOW -->
+  <section id="data-flow">
+    <h2>Data Flow</h2>
+
+    <h3>Read path — loading the dashboard</h3>
+    <div class="flow">
+      <div class="flow-box accent">Dashboard<small>component</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box purple">useDashboard<small>hook</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box green">GetDashboardStats<small>UseCase</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box yellow">IReservationRepo<small>interface</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">ApiReservation<small>Repository</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">HttpClient<small>fetch()</small></div>
+    </div>
+
+    <h3>Write path — creating a reservation</h3>
+    <div class="flow">
+      <div class="flow-box accent">CreateForm<small>submit</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box purple">useCreateReservation<small>.execute()</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box green">CreateReservation<small>UseCase</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">POST /reservations<small>via HttpClient</small></div>
+    </div>
+
+    <h3>Event path — after any mutation</h3>
+    <div class="flow">
+      <div class="flow-box green">UseCase<small>after save</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box red">eventBus.publish<small>ReservationCreated</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box yellow">ToastHandler<small>shows toast</small></div>
+    </div>
+    <div class="flow" style="margin-top:8px">
+      <div class="flow-box red">eventBus.publish<small>same event</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box yellow">RefreshHandler<small>triggerRefresh()</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box accent">refreshTick++<small>AppContext</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box purple">all hooks re-fetch<small>useEffect dep</small></div>
+    </div>
+
+    <div class="callout tip">
+      <span class="callout-icon">✅</span>
+      <div class="callout-body">
+        <div class="callout-title">Components never call fetch directly</div>
+        <p>
+          All network activity flows: hook → use case → repository → HttpClient.
+          Components render state returned by hooks and call hook action functions on user
+          interaction. This means any component can be integration-tested by replacing its
+          hook with a stub.
+        </p>
+      </div>
+    </div>
+
+    <section id="diag-dataflow">
+    <h3>Diagram — Full Write Request Sequence</h3>
+    <p>End-to-end trace of <code>Create Reservation</code> showing how all layers collaborate and how the event bus decouples toast + refresh from the use case.</p>
+    <div class="mermaid-wrap">
+      <div class="mermaid-label">sequenceDiagram — create reservation happy path</div>
+      <div class="mermaid">
+sequenceDiagram
+    participant UI as CreateForm
+    participant Hook as useCreateReservation
+    participant UC as CreateReservationUseCase
+    participant NS as LocalStorageNameStore
+    participant Repo as ApiReservationRepository
+    participant HTTP as HttpClient
+    participant Bus as EventBus
+    participant Toast as ToastHandler
+    participant Refresh as RefreshHandler
+    participant App as AppContext
+
+    UI->>Hook: execute(name, productId, qty)
+    Hook->>UC: execute(name, productId, qty)
+    UC->>NS: save(uuid, customerName)
+    UC->>Repo: create(productId, uuid, qty)
+    Repo->>HTTP: POST /reservations
+    HTTP-->>Repo: 201 ReservationDto
+    Repo-->>UC: Reservation entity
+    UC->>Bus: publish(ReservationCreatedEvent)
+    Bus->>Toast: handler(event) → show toast ✅
+    Bus->>Refresh: handler(event) → triggerRefresh()
+    Refresh->>App: refreshTick++
+    App-->>Hook: re-fetch triggers in all hooks
+    UC-->>Hook: Reservation entity
+    Hook-->>UI: { loading:false, error:null }
+      </div>
+    </div>
+    </section>
+  </section>
+
+  <!-- FILE TREE -->
+  <section id="file-tree">
+    <h2>File Tree</h2>
+    <div class="file-tree">
+<span class="dir">src/</span>
+├── <span class="file">main.tsx</span>                  <span class="note">React root, mounts &lt;AppProvider&gt;</span>
+├── <span class="file">App.tsx</span>                   <span class="note">Tab router — conditional render, no library</span>
+├── <span class="file">index.css</span>                 <span class="note">ALL CSS: tokens, globals, utility classes</span>
+│
+├── <span class="dir">types/</span>
+│   └── <span class="file">index.ts</span>              <span class="note">TabId union + other shared types</span>
+│
+├── <span class="dir">context/</span>
+│   └── <span class="hl">AppContext.tsx</span>          <span class="note">Global state + EDA handler wiring</span>
+│
+├── <span class="dir">domain/</span>                   <span class="note">Pure business logic — zero external imports</span>
+│   ├── <span class="dir">entities/</span>
+│   │   ├── <span class="hl">Reservation.ts</span>      <span class="note">Rich entity: isActive, canConfirm, expiryMath</span>
+│   │   └── <span class="hl">Inventory.ts</span>        <span class="note">availableStock, isOutOfStock, isLowStock</span>
+│   ├── <span class="dir">value-objects/</span>
+│   │   └── <span class="file">ReservationStatus.ts</span>  <span class="note">ACTIVE | CONFIRMED | CANCELLED | EXPIRED + display meta</span>
+│   ├── <span class="dir">interfaces/</span>
+│   │   ├── <span class="file">IReservationRepository.ts</span>
+│   │   ├── <span class="file">IInventoryRepository.ts</span>
+│   │   └── <span class="file">INameStore.ts</span>
+│   ├── <span class="dir">events/</span>
+│   │   ├── <span class="file">DomainEvent.ts</span>
+│   │   └── <span class="file">index.ts</span>              <span class="note">4 event classes</span>
+│   └── <span class="dir">exceptions/</span>
+│       └── <span class="file">index.ts</span>              <span class="note">OutOfStockError, InvalidStateError, NotFoundError</span>
+│
+├── <span class="dir">application/</span>
+│   ├── <span class="dir">use-cases/</span>
+│   │   ├── <span class="file">CreateReservationUseCase.ts</span>
+│   │   ├── <span class="file">ConfirmReservationUseCase.ts</span>
+│   │   ├── <span class="file">CancelReservationUseCase.ts</span>
+│   │   ├── <span class="file">GetReservationsUseCase.ts</span>
+│   │   ├── <span class="file">GetDashboardStatsUseCase.ts</span>
+│   │   └── <span class="file">SeedInventoryUseCase.ts</span>
+│   ├── <span class="dir">services/</span>
+│   │   └── <span class="file">SimulationService.ts</span>  <span class="note">6 simulation scenarios</span>
+│   └── <span class="dir">utils/</span>
+│       └── <span class="file">uuid.ts</span>
+│
+├── <span class="dir">events/</span>                   <span class="note">Pub/sub bus and reaction handlers</span>
+│   ├── <span class="hl">EventBus.ts</span>             <span class="note">Singleton — subscribe() returns unsubscribe fn</span>
+│   └── <span class="dir">handlers/</span>
+│       ├── <span class="file">ToastHandler.ts</span>       <span class="note">Shows toasts on domain events</span>
+│       └── <span class="file">RefreshHandler.ts</span>     <span class="note">Calls triggerRefresh() on mutating events</span>
+│
+├── <span class="dir">infrastructure/</span>           <span class="note">Implements domain interfaces — knows about HTTP</span>
+│   ├── <span class="dir">http/</span>
+│   │   └── <span class="file">HttpClient.ts</span>
+│   ├── <span class="dir">repositories/</span>
+│   │   ├── <span class="file">ApiReservationRepository.ts</span>
+│   │   └── <span class="file">ApiInventoryRepository.ts</span>
+│   ├── <span class="dir">stores/</span>
+│   │   └── <span class="file">LocalStorageNameStore.ts</span>
+│   └── <span class="hl">container.ts</span>            <span class="note">DI wiring — ONLY file importing both interfaces &amp; impls</span>
+│
+├── <span class="dir">presentation/</span>
+│   └── <span class="dir">hooks/</span>                <span class="note">Bridge use cases to React state</span>
+│       ├── <span class="file">useDashboard.ts</span>
+│       ├── <span class="file">useReservations.ts</span>
+│       ├── <span class="file">useCreateReservation.ts</span>
+│       ├── <span class="file">useSimulate.ts</span>
+│       └── <span class="file">useInventory.ts</span>
+│
+└── <span class="dir">components/</span>
+    ├── <span class="dir">Layout/</span>
+    │   ├── <span class="file">Sidebar.tsx</span>           <span class="note">Nav, LIVE/OFFLINE dot, version footer</span>
+    │   └── <span class="file">TopBar.tsx</span>            <span class="note">Breadcrumb, live clock, refresh button</span>
+    ├── <span class="dir">shared/</span>
+    │   ├── <span class="file">Badge.tsx</span>
+    │   ├── <span class="file">ExpiryBar.tsx</span>         <span class="note">Accepts Reservation entity, ticks every 1s</span>
+    │   ├── <span class="file">Modal.tsx</span>
+    │   ├── <span class="file">Spinner.tsx</span>
+    │   └── <span class="file">Toast.tsx</span>
+    ├── <span class="dir">Dashboard/</span>
+    ├── <span class="dir">Reservations/</span>
+    ├── <span class="dir">CreateForm/</span>
+    ├── <span class="dir">Simulate/</span>
+    └── <span class="dir">Settings/</span>
+    </div>
+  </section>
+
+  <!-- DOMAIN -->
+  <section id="domain">
+    <h2>Domain Layer</h2>
+    <p>
+      The domain layer contains pure TypeScript business rules.
+      <strong>No React, no fetch, no localStorage.</strong>
+      Every other layer may import from here; this layer imports from nowhere.
+      This is what makes the business logic portable, testable, and framework-agnostic.
+    </p>
+
+    <h3>Entities</h3>
+    <h4>Reservation</h4>
+    <p>A rich entity that owns its own business logic. Components never recompute status or expiry — they call entity methods.</p>
+<pre><code><span class="kw">class</span> <span class="ty">Reservation</span> {
+  <span class="cm">// Constructor args — all readonly</span>
+  id: <span class="ty">string</span>;  productId: <span class="ty">string</span>;  productName: <span class="ty">string</span>
+  userId: <span class="ty">string</span>;  quantity: <span class="ty">number</span>;  status: <span class="ty">ReservationStatus</span>
+  expiresAt: <span class="ty">Date</span>;  createdAt: <span class="ty">Date</span>
+
+  <span class="cm">// State queries</span>
+  get isActive(): <span class="ty">boolean</span>
+  get isConfirmed(): <span class="ty">boolean</span>
+  get isCancelled(): <span class="ty">boolean</span>
+  get isExpired(): <span class="ty">boolean</span>
+
+  <span class="cm">// Business rules</span>
+  get canConfirm(): <span class="ty">boolean</span>   <span class="cm">// true only when ACTIVE</span>
+  get canCancel(): <span class="ty">boolean</span>    <span class="cm">// true only when ACTIVE</span>
+
+  <span class="cm">// Expiry calculations — used by ExpiryBar</span>
+  get expiryPercentElapsed(): <span class="ty">number</span>  <span class="cm">// 0–100</span>
+  get timeRemainingMs(): <span class="ty">number</span>       <span class="cm">// 0 when expired</span>
+
+  <span class="cm">// Immutable status update</span>
+  <span class="fn">withStatus</span>(status: <span class="ty">ReservationStatus</span>): <span class="ty">Reservation</span>
+}</code></pre>
+
+    <h4>Inventory</h4>
+<pre><code><span class="kw">class</span> <span class="ty">Inventory</span> {
+  productId: <span class="ty">string</span>;  name: <span class="ty">string</span>;  totalStock: <span class="ty">number</span>
+  confirmedSales: <span class="ty">number</span>;  activeReservations: <span class="ty">number</span>;  updatedAt: <span class="ty">Date</span>
+
+  get availableStock(): <span class="ty">number</span>   <span class="cm">// totalStock - confirmedSales - activeReservations</span>
+  get isOutOfStock(): <span class="ty">boolean</span>
+  get isLowStock(): <span class="ty">boolean</span>      <span class="cm">// availableStock &lt; 5</span>
+}</code></pre>
+
+    <h3>Value Object — ReservationStatus</h3>
+<pre><code><span class="kw">type</span> <span class="ty">ReservationStatus</span> = <span class="str">'ACTIVE'</span> | <span class="str">'CONFIRMED'</span> | <span class="str">'CANCELLED'</span> | <span class="str">'EXPIRED'</span>
+
+<span class="cm">// Display metadata used by Badge and status rendering</span>
+<span class="ty">ReservationStatusMeta</span>[status] → { label: <span class="ty">string</span>, colorVar: <span class="ty">string</span>, pulsing: <span class="ty">boolean</span> }</code></pre>
+
+    <section id="diag-lifecycle">
+    <h3>Diagram — Reservation Lifecycle</h3>
+    <p>The <code>Reservation</code> entity owns all transition logic. <code>canConfirm</code> and <code>canCancel</code> are computed getters — components never duplicate this check.</p>
+    <div class="mermaid-wrap">
+      <div class="mermaid-label">stateDiagram — reservation status machine</div>
+      <div class="mermaid">
+stateDiagram-v2
+    [*] --> ACTIVE : CreateReservationUseCase (stock available)
+    ACTIVE --> CONFIRMED : ConfirmReservationUseCase (canConfirm)
+    ACTIVE --> CANCELLED : CancelReservationUseCase (canCancel)
+    ACTIVE --> EXPIRED : Backend BullMQ job (2-min TTL)
+
+    CONFIRMED --> [*]
+    CANCELLED --> [*]
+    EXPIRED --> [*]
+
+    note right of ACTIVE
+        isActive · ExpiryBar ticking
+    end note
+    note right of CONFIRMED
+        isConfirmed · Badge purple
+    end note
+    note right of CANCELLED
+        isCancelled · Badge yellow
+    end note
+    note right of EXPIRED
+        isExpired · Badge red
+    end note
+      </div>
+    </div>
+    </section>
+
+    <section id="diag-domain">
+    <h3>Diagram — Domain Structure</h3>
+    <div class="mermaid-wrap">
+      <div class="mermaid-label">flowchart — domain layer internals</div>
+      <div class="mermaid">
+flowchart LR
+    subgraph Entities
+      R["Reservation\n─────────────\nid · productId · userId\nquantity · status\nexpiresAt · createdAt\n─────────────\nisActive · canConfirm\nexpiryPercentElapsed\ntimeRemainingMs\nwithStatus()"]
+      I["Inventory\n─────────────\nproductId · name\ntotalStock\nconfirmedSales\nactiveReservations\n─────────────\navailableStock\nisOutOfStock\nisLowStock"]
+    end
+
+    subgraph ValueObjects
+      S["ReservationStatus\nACTIVE | CONFIRMED\nCANCELLED | EXPIRED\n+ display meta"]
+    end
+
+    subgraph Interfaces
+      IR["IReservationRepository\ngetAll · getById\ncreate · confirm\ncancel · getLogs"]
+      II["IInventoryRepository\ngetAll · upsert"]
+      IN["INameStore\nsave · resolve\ngetAll · clear"]
+    end
+
+    subgraph Events
+      EV["ReservationCreatedEvent\nReservationConfirmedEvent\nReservationCancelledEvent\nInventorySeededEvent"]
+    end
+
+    R -->|uses| S
+    I -.->|availableStock formula| I
+
+    style R  fill:#2b2614,stroke:#ffb520,color:#ffb520
+    style I  fill:#2b2614,stroke:#ffb520,color:#ffb520
+    style S  fill:#1a2b22,stroke:#00d17a,color:#00d17a
+    style IR fill:#1a2035,stroke:#82aaff,color:#82aaff
+    style II fill:#1a2035,stroke:#82aaff,color:#82aaff
+    style IN fill:#1a2035,stroke:#82aaff,color:#82aaff
+    style EV fill:#2b1a1e,stroke:#ff3355,color:#ff3355
+      </div>
+    </div>
+    </section>
+
+    <h3>Repository Interfaces (Ports)</h3>
+    <p>These are the DIP "ports" — the abstractions use cases depend on. Infrastructure provides the "adapters" (implementations).</p>
+    <table>
+      <thead><tr><th>Interface</th><th>Methods</th></tr></thead>
+      <tbody>
+        <tr><td><code>IReservationRepository</code></td><td><code>getAll</code>, <code>getById</code>, <code>create</code>, <code>confirm</code>, <code>cancel</code>, <code>getLogs</code></td></tr>
+        <tr><td><code>IInventoryRepository</code></td><td><code>getAll</code>, <code>upsert</code></td></tr>
+        <tr><td><code>INameStore</code></td><td><code>save</code>, <code>resolve</code>, <code>getAll</code>, <code>clear</code></td></tr>
+      </tbody>
+    </table>
+
+    <h3>Domain Events</h3>
+    <table>
+      <thead><tr><th>Event class</th><th>Published by</th><th>Payload</th></tr></thead>
+      <tbody>
+        <tr><td><code>ReservationCreatedEvent</code></td><td>CreateReservationUseCase</td><td><code>reservation</code>, <code>customerName</code></td></tr>
+        <tr><td><code>ReservationConfirmedEvent</code></td><td>ConfirmReservationUseCase</td><td><code>reservation</code></td></tr>
+        <tr><td><code>ReservationCancelledEvent</code></td><td>CancelReservationUseCase</td><td><code>reservation</code></td></tr>
+        <tr><td><code>InventorySeededEvent</code></td><td>SeedInventoryUseCase</td><td><code>inventory</code></td></tr>
+      </tbody>
+    </table>
+
+    <h3>Domain Exceptions</h3>
+    <table>
+      <thead><tr><th>Class</th><th>When thrown</th></tr></thead>
+      <tbody>
+        <tr><td><code>OutOfStockError</code></td><td>Backend returns HTTP 409 on reservation create</td></tr>
+        <tr><td><code>InvalidStateError</code></td><td>Backend returns HTTP 409 on confirm / cancel</td></tr>
+        <tr><td><code>NotFoundError</code></td><td>Backend returns HTTP 404</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- APPLICATION -->
+  <section id="application">
+    <h2>Application Layer</h2>
+    <p>Use cases orchestrate the domain. Each class has a single <code>execute()</code> method and depends only on domain interfaces — never on <code>HttpClient</code> or any React API.</p>
+
+    <table>
+      <thead><tr><th>Use Case</th><th>execute() signature</th><th>Side effects</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>CreateReservationUseCase</code></td>
+          <td><code>(customerName, productId, quantity) → Reservation</code></td>
+          <td>Saves name to <code>INameStore</code>, publishes <code>ReservationCreatedEvent</code></td>
+        </tr>
+        <tr>
+          <td><code>ConfirmReservationUseCase</code></td>
+          <td><code>(id) → Reservation</code></td>
+          <td>Publishes <code>ReservationConfirmedEvent</code></td>
+        </tr>
+        <tr>
+          <td><code>CancelReservationUseCase</code></td>
+          <td><code>(id) → Reservation</code></td>
+          <td>Publishes <code>ReservationCancelledEvent</code></td>
+        </tr>
+        <tr>
+          <td><code>GetReservationsUseCase</code></td>
+          <td><code>(params) → PaginatedResult&lt;Reservation&gt;</code></td>
+          <td>None</td>
+        </tr>
+        <tr>
+          <td><code>GetDashboardStatsUseCase</code></td>
+          <td><code>() → DashboardStats</code></td>
+          <td>None</td>
+        </tr>
+        <tr>
+          <td><code>SeedInventoryUseCase</code></td>
+          <td><code>(params) → Inventory</code></td>
+          <td>Publishes <code>InventorySeededEvent</code></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <section id="diag-usecase">
+    <h3>Diagram — Use Case Orchestration Pattern</h3>
+    <p>Every mutating use case follows the same pattern: validate inputs via domain, call the repository, publish an event. The event bus does the rest.</p>
+    <div class="mermaid-wrap">
+      <div class="mermaid-label">flowchart — CreateReservationUseCase internals</div>
+      <div class="mermaid">
+flowchart TD
+    A([execute\ncustomerName · productId · qty]) --> B[Generate UUID\nuuid4]
+    B --> C[nameStore.save\nuuid → customerName]
+    C --> D[repo.create\nproductId · uuid · qty]
+    D -- success --> E[eventBus.publish\nReservationCreatedEvent]
+    D -- OutOfStockError --> F([throw OutOfStockError\n→ hook shows error])
+    E --> G([return Reservation entity\n→ hook sets state])
+
+    style A fill:#1a2535,stroke:#3aecff,color:#3aecff
+    style B fill:#1a2b22,stroke:#00d17a,color:#00d17a
+    style C fill:#1a2b22,stroke:#00d17a,color:#00d17a
+    style D fill:#1a2035,stroke:#82aaff,color:#82aaff
+    style E fill:#2b1a1e,stroke:#ff3355,color:#ff3355
+    style F fill:#2b1214,stroke:#ff3355,color:#ff3355
+    style G fill:#1a2535,stroke:#3aecff,color:#3aecff
+      </div>
+    </div>
+    </section>
+
+    <h3>SimulationService</h3>
+    <p>Provides six named scenarios. Each method accepts a <code>Logger</code> callback so log lines stream to the component in real-time.</p>
+    <table>
+      <thead><tr><th>Method</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>runConcurrentRush</code></td><td>N reservations submitted simultaneously — tests race conditions</td></tr>
+        <tr><td><code>runLifecycle</code></td><td>Full happy path: create → confirm for each reservation</td></tr>
+        <tr><td><code>runCancelFlow</code></td><td>Creates then immediately cancels</td></tr>
+        <tr><td><code>runExpireGuard</code></td><td>Creates reservations and waits for expiry</td></tr>
+        <tr><td><code>runBulk</code></td><td>Large-volume create batch</td></tr>
+        <tr><td><code>runStress</code></td><td>Mixed concurrent creates + confirms + cancels</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- EVENTS -->
+  <section id="events">
+    <h2>Events (EDA)</h2>
+    <p>
+      The Events layer decouples <em>producers</em> (use cases that mutate data) from
+      <em>consumers</em> (UI side effects like toasts and data refreshes). A use case
+      publishes an event; it has zero knowledge of who is listening.
+    </p>
+
+    <h3>EventBus</h3>
+<pre><code><span class="cm">// Subscribe — returns an unsubscribe function</span>
+<span class="kw">const</span> unsub = eventBus.<span class="fn">subscribe</span>&lt;<span class="ty">ReservationCreatedEvent</span>&gt;(
+  <span class="str">'ReservationCreated'</span>,
+  (e) =&gt; console.<span class="fn">log</span>(e.reservation.id)
+);
+unsub(); <span class="cm">// call to unsubscribe</span>
+
+<span class="cm">// Publish — dispatches to all subscribers synchronously</span>
+eventBus.<span class="fn">publish</span>(<span class="kw">new</span> <span class="ty">ReservationCreatedEvent</span>(reservation, customerName));</code></pre>
+
+    <div class="callout info">
+      <span class="callout-icon">ℹ️</span>
+      <div class="callout-body">
+        <div class="callout-title">Singleton pattern</div>
+        <p>
+          <code>eventBus</code> is a module-level singleton exported from
+          <code>src/events/EventBus.ts</code>. The DI container imports and passes it to
+          every use case that publishes, ensuring all parts of the app share the same instance.
+        </p>
+      </div>
+    </div>
+
+    <h3>Handlers</h3>
+    <p>Both handlers are registered once in <code>AppContext</code> on mount and automatically unsubscribe on unmount:</p>
+<pre><code><span class="cm">// AppContext.tsx — EDA wiring</span>
+<span class="fn">useEffect</span>(() =&gt; {
+  <span class="kw">const</span> cleanupToast   = <span class="fn">registerToastHandler</span>(toast);
+  <span class="kw">const</span> cleanupRefresh = <span class="fn">registerRefreshHandler</span>(triggerRefresh);
+  <span class="kw">return</span> () =&gt; { <span class="fn">cleanupToast</span>(); <span class="fn">cleanupRefresh</span>(); };
+}, [toast, triggerRefresh]);</code></pre>
+
+    <p>
+      To add a new side effect to any existing event — for example, sending an analytics ping
+      when a reservation is confirmed — create a new handler file and register it here.
+      <strong>Never modify the use case that publishes the event.</strong>
+      That is the Open/Closed Principle.
+    </p>
+
+    <section id="diag-eda">
+    <h3>Diagram — EDA Pub/Sub Wiring</h3>
+    <p>Producers and consumers know nothing about each other. The EventBus is the only shared dependency — and it's injected, not imported directly.</p>
+    <div class="mermaid-wrap">
+      <div class="mermaid-label">flowchart — event bus producers and consumers</div>
+      <div class="mermaid">
+flowchart LR
+    subgraph UseCases["Use Cases (Producers)"]
+      UC1["CreateReservationUseCase"]
+      UC2["ConfirmReservationUseCase"]
+      UC3["CancelReservationUseCase"]
+      UC4["SeedInventoryUseCase"]
+    end
+
+    BUS["EventBus\n(singleton)"]
+
+    subgraph Handlers["Handlers (Consumers)"]
+      H1["ToastHandler\nshows success / info toast"]
+      H2["RefreshHandler\ncalls triggerRefresh()"]
+    end
+
+    subgraph AppContext["AppContext (wires on mount)"]
+      AC["registerToastHandler(toast)\nregisterRefreshHandler(triggerRefresh)"]
+    end
+
+    UC1 & UC2 & UC3 & UC4 -->|publish event| BUS
+    BUS -->|subscribers notified| H1 & H2
+    AC -.->|subscribes| BUS
+
+    style BUS fill:#2b1a1e,stroke:#ff3355,color:#ff3355
+    style H1  fill:#2b2614,stroke:#ffb520,color:#ffb520
+    style H2  fill:#2b2614,stroke:#ffb520,color:#ffb520
+    style AC  fill:#1a2535,stroke:#3aecff,color:#3aecff
+      </div>
+    </div>
+    </section>
+  </section>
+
+  <!-- INFRASTRUCTURE -->
+  <section id="infrastructure">
+    <h2>Infrastructure Layer</h2>
+    <p>Infrastructure adapts the outside world (HTTP API, localStorage) to the domain interfaces. This is the only layer that knows about <code>fetch</code>, HTTP status codes, JSON parsing, or <code>localStorage</code>.</p>
+
+    <h3>HttpClient</h3>
+<pre><code><span class="kw">class</span> <span class="ty">HttpClient</span> {
+  <span class="cm">// getBase is a lambda — URL is read fresh on every request.</span>
+  <span class="cm">// Changes in Settings tab take effect immediately, no reinitialisation.</span>
+  <span class="fn">constructor</span>(private readonly <span class="fn">getBase</span>: () =&gt; <span class="ty">string</span>) {}
+
+  <span class="fn">request</span>&lt;<span class="ty">T</span>&gt;(
+    method: <span class="ty">string</span>,
+    path: <span class="ty">string</span>,
+    body?: <span class="ty">unknown</span>
+  ): <span class="ty">Promise</span>&lt;{ ok: <span class="ty">boolean</span>; status: <span class="ty">number</span>; data: <span class="ty">T</span> }&gt;
+}</code></pre>
+
+    <h3>Error mapping in repositories</h3>
+    <table>
+      <thead><tr><th>HTTP status</th><th>Domain exception thrown</th></tr></thead>
+      <tbody>
+        <tr><td>409 on reservation create</td><td><code>OutOfStockError</code></td></tr>
+        <tr><td>409 on confirm / cancel</td><td><code>InvalidStateError</code></td></tr>
+        <tr><td>404</td><td><code>NotFoundError</code></td></tr>
+        <tr><td>Any other non-2xx</td><td><code>Error</code> with message from response body</td></tr>
+      </tbody>
+    </table>
+
+    <h3>LocalStorageNameStore</h3>
+    <p>
+      Implements <code>INameStore</code> using the <code>userNameMap</code> key in <code>localStorage</code>,
+      persisting a <code>{ [uuid]: fullName }</code> JSON map across page reloads.
+      The frontend generates a UUID per reservation so names can be resolved even for reservations
+      created directly via the API (fallback: truncated UUID).
+    </p>
+
+    <h3>DI Container</h3>
+    <p>
+      <code>src/infrastructure/container.ts</code> is the <strong>only file</strong> allowed to import both
+      domain interfaces and their concrete implementations simultaneously. It wires everything together
+      once at module load time:
+    </p>
+<pre><code><span class="cm">// container.ts — simplified</span>
+<span class="kw">const</span> httpClient     = <span class="kw">new</span> <span class="ty">HttpClient</span>(() =&gt; localStorage.<span class="fn">getItem</span>(<span class="str">'api_base'</span>) ?? <span class="str">'http://localhost:3000'</span>);
+<span class="kw">const</span> reservationRepo = <span class="kw">new</span> <span class="ty">ApiReservationRepository</span>(httpClient);
+<span class="kw">const</span> inventoryRepo   = <span class="kw">new</span> <span class="ty">ApiInventoryRepository</span>(httpClient);
+<span class="kw">const</span> nameStore       = <span class="kw">new</span> <span class="ty">LocalStorageNameStore</span>();
+
+<span class="kw">export const</span> container = {
+  createReservation:  <span class="kw">new</span> <span class="ty">CreateReservationUseCase</span>(reservationRepo, nameStore, eventBus),
+  confirmReservation: <span class="kw">new</span> <span class="ty">ConfirmReservationUseCase</span>(reservationRepo, eventBus),
+  <span class="cm">// ... all 6 use cases + SimulationService</span>
+  nameStore, <span class="cm">// exposed for name resolution in components</span>
+};
+
+<span class="cm">// Health check helper used by AppContext</span>
+<span class="kw">export function</span> <span class="fn">checkHealth</span>(): <span class="ty">Promise</span>&lt;<span class="ty">boolean</span>&gt;</code></pre>
+
+    <div class="callout tip">
+      <span class="callout-icon">✅</span>
+      <div class="callout-body">
+        <div class="callout-title">Swapping implementations</div>
+        <p>
+          To use an in-memory repository (for testing), replace <code>ApiReservationRepository</code>
+          with <code>InMemoryReservationRepository</code> in <code>container.ts</code>. Every use case,
+          hook, and component automatically picks up the new implementation — nothing else changes.
+        </p>
+      </div>
+    </div>
+
+    <section id="diag-di">
+    <h3>Diagram — DI Container Wiring</h3>
+    <p><code>container.ts</code> is the only file that sees both sides — domain interfaces on the left, concrete implementations on the right. Everything else stays in its own layer.</p>
+    <div class="mermaid-wrap">
+      <div class="mermaid-label">flowchart — container.ts wiring (dependency inversion)</div>
+      <div class="mermaid">
+flowchart LR
+    subgraph Interfaces["Domain Interfaces (abstractions)"]
+      IR["IReservationRepository"]
+      II["IInventoryRepository"]
+      IN["INameStore"]
+      IB["EventBus"]
+    end
+
+    subgraph Container["container.ts\n(ONLY file that knows both sides)"]
+      CT["new ApiReservationRepository(http)\nnew ApiInventoryRepository(http)\nnew LocalStorageNameStore()\neventBus singleton"]
+    end
+
+    subgraph Implementations["Infrastructure (concrete)"]
+      AR["ApiReservationRepository"]
+      AI["ApiInventoryRepository"]
+      LS["LocalStorageNameStore"]
+      HC["HttpClient"]
+    end
+
+    subgraph UseCases["Application Use Cases"]
+      UC["CreateReservationUseCase\nConfirmReservationUseCase\n…all 6 use cases"]
+    end
+
+    IR & II & IN & IB --> CT
+    AR & AI & LS & HC --> CT
+    CT --> UC
+
+    style CT fill:#2b2614,stroke:#ffb520,color:#ffb520
+    style IR fill:#1a2035,stroke:#82aaff,color:#82aaff
+    style II fill:#1a2035,stroke:#82aaff,color:#82aaff
+    style IN fill:#1a2035,stroke:#82aaff,color:#82aaff
+    style IB fill:#1a2035,stroke:#82aaff,color:#82aaff
+    style UC fill:#1a2b22,stroke:#00d17a,color:#00d17a
+      </div>
+    </div>
+    </section>
+  </section>
+
+  <!-- PRESENTATION HOOKS -->
+  <section id="presentation">
+    <h2>Presentation Hooks</h2>
+    <p>
+      Hooks bridge use cases to React state. Each hook calls use cases, manages
+      <code>loading</code> / <code>error</code> state, and returns everything a component needs.
+      <strong>Components call hooks only — they never import from <code>container</code> directly</strong>
+      (the exception: <code>container.nameStore</code> for name resolution is allowed in components).
+    </p>
+
+    <table>
+      <thead><tr><th>Hook</th><th>Key returns</th><th>Re-fetches when</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>useDashboard()</code></td>
+          <td><code>stats</code>, <code>loading</code>, <code>error</code></td>
+          <td><code>refreshTick</code> changes</td>
+        </tr>
+        <tr>
+          <td><code>useReservations()</code></td>
+          <td><code>result</code>, <code>loading</code>, <code>confirm</code>, <code>cancel</code>, <code>getLogs</code>, <code>page</code>, <code>filter</code></td>
+          <td><code>refreshTick</code>, <code>page</code>, <code>filter</code></td>
+        </tr>
+        <tr>
+          <td><code>useCreateReservation()</code></td>
+          <td><code>execute</code>, <code>loading</code>, <code>error</code></td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>useSimulate()</code></td>
+          <td><code>run</code>, <code>running</code>, <code>logs</code>, <code>clearLogs</code></td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>useInventory()</code></td>
+          <td><code>items</code>, <code>loading</code>, <code>seed</code>, <code>seeding</code>, <code>seedError</code></td>
+          <td><code>refreshTick</code></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Cancellable fetch pattern</h3>
+    <p>All fetching hooks use this pattern to prevent state updates on unmounted components:</p>
+<pre><code><span class="fn">useEffect</span>(() =&gt; {
+  <span class="kw">let</span> cancelled = <span class="kw">false</span>;
+  <span class="fn">setLoading</span>(<span class="kw">true</span>);
+
+  container.getReservations.<span class="fn">execute</span>(params)
+    .<span class="fn">then</span>((r) =&gt;   { <span class="kw">if</span> (!cancelled) <span class="fn">setResult</span>(r);         })
+    .<span class="fn">catch</span>((e: <span class="ty">Error</span>) =&gt; { <span class="kw">if</span> (!cancelled) <span class="fn">setError</span>(e.message); })
+    .<span class="fn">finally</span>(() =&gt;  { <span class="kw">if</span> (!cancelled) <span class="fn">setLoading</span>(<span class="kw">false</span>);   });
+
+  <span class="kw">return</span> () =&gt; { cancelled = <span class="kw">true</span>; };
+}, [refreshTick, page, filter]);</code></pre>
+  </section>
+
+  <!-- COMPONENTS -->
+  <section id="components">
+    <h2>Components</h2>
+    <p>Components are pure presentation. They render state returned by hooks and call hook action functions in response to user interactions. No business logic lives here.</p>
+
+    <h3>Shared components</h3>
+    <table>
+      <thead><tr><th>Component</th><th>Props</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>&lt;ExpiryBar&gt;</code></td>
+          <td><code>reservation: Reservation</code></td>
+          <td>Auto-ticks every 1s. Colour transitions green → yellow → red as expiry approaches. Delegates all math to entity methods.</td>
+        </tr>
+        <tr>
+          <td><code>&lt;Badge&gt;</code></td>
+          <td><code>status: ReservationStatus</code></td>
+          <td>Reads label and colour from <code>ReservationStatusMeta</code>. Pulsing dot for ACTIVE status.</td>
+        </tr>
+        <tr>
+          <td><code>&lt;Modal&gt;</code></td>
+          <td><code>open</code>, <code>onClose</code>, <code>title</code>, <code>children</code></td>
+          <td>Backdrop click closes. Used for the reservation status-change log.</td>
+        </tr>
+        <tr>
+          <td><code>&lt;Spinner&gt;</code></td>
+          <td><code>size?</code>, <code>color?</code></td>
+          <td>CSS animation spinner; no library.</td>
+        </tr>
+        <tr>
+          <td><code>&lt;Toast&gt;</code></td>
+          <td>Consumed by <code>ToastStack</code></td>
+          <td>Auto-dismiss after 3.5 s. Types: success / error / info.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Layout components</h3>
+    <table>
+      <thead><tr><th>Component</th><th>Responsibility</th></tr></thead>
+      <tbody>
+        <tr><td><code>&lt;Sidebar&gt;</code></td><td>Navigation tabs with active indicator, LIVE/OFFLINE pulsing dot, version footer. Reads <code>tab</code> and <code>online</code> from <code>useApp()</code>.</td></tr>
+        <tr><td><code>&lt;TopBar&gt;</code></td><td>Breadcrumb title, live HH:MM:SS clock (ticks every second via its own interval), LIVE/OFFLINE pill, manual refresh button.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Customer name resolution</h3>
+    <p>Reservations use a UUID <code>userId</code>. Names are stored in localStorage and resolved at render time:</p>
+<pre><code><span class="cm">// In any component that renders a customer name:</span>
+<span class="kw">const</span> name = container.nameStore.<span class="fn">resolve</span>(r.userId)
+  ?? r.userId.<span class="fn">slice</span>(<span class="nu">0</span>, <span class="nu">8</span>) + <span class="str">'…'</span>;
+<span class="cm">// Falls back to truncated UUID for reservations created via external API</span></code></pre>
+  </section>
+
+  <!-- CONTEXT API -->
+  <section id="context-api">
+    <h2>AppContext API</h2>
+    <p>All components access global state via <code>useApp()</code>. Must be called inside <code>&lt;AppProvider&gt;</code>, which wraps the entire app in <code>main.tsx</code>.</p>
+
+    <table>
+      <thead><tr><th>Value</th><th>Type</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>tab</code></td><td><code>TabId</code></td><td>Currently active tab</td></tr>
+        <tr><td><code>setTab</code></td><td><code>(t: TabId) =&gt; void</code></td><td>Navigate to a tab programmatically</td></tr>
+        <tr><td><code>apiBase</code></td><td><code>string</code></td><td>Backend base URL; persisted to <code>localStorage</code></td></tr>
+        <tr><td><code>setApiBase</code></td><td><code>(url: string) =&gt; void</code></td><td>Updates URL; trailing slash stripped automatically</td></tr>
+        <tr><td><code>online</code></td><td><code>boolean</code></td><td><code>true</code> when backend health check passes (polled every 10 s)</td></tr>
+        <tr><td><code>toast</code></td><td><code>(msg, type?) =&gt; void</code></td><td>Show a notification. type: <code>'success' | 'error' | 'info'</code></td></tr>
+        <tr><td><code>toasts</code></td><td><code>Toast[]</code></td><td>Active toast queue (consumed by <code>ToastStack</code> in App.tsx)</td></tr>
+        <tr><td><code>dismissToast</code></td><td><code>(id: number) =&gt; void</code></td><td>Manually remove a toast</td></tr>
+        <tr><td><code>refreshTick</code></td><td><code>number</code></td><td>Increments every 10 s <em>and</em> after every mutating domain event. Use as a <code>useEffect</code> dependency to auto-refresh data.</td></tr>
+        <tr><td><code>triggerRefresh</code></td><td><code>() =&gt; void</code></td><td>Manually force a refresh tick (e.g. from the TopBar refresh button)</td></tr>
+      </tbody>
+    </table>
+
+    <h3>localStorage keys</h3>
+    <table>
+      <thead><tr><th>Key</th><th>Value type</th><th>Managed by</th></tr></thead>
+      <tbody>
+        <tr><td><code>api_base</code></td><td><code>string</code></td><td><code>AppContext.setApiBase()</code></td></tr>
+        <tr><td><code>userNameMap</code></td><td><code>{ [uuid]: fullName }</code> JSON</td><td><code>LocalStorageNameStore</code></td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout info">
+      <span class="callout-icon">ℹ️</span>
+      <div class="callout-body">
+        <div class="callout-title">toast() is called by EDA handlers, not components</div>
+        <p>
+          In the DDD/EDA architecture, toast notifications are triggered by <code>ToastHandler</code>
+          reacting to domain events — not called directly in component event handlers.
+          The exception is error paths inside hooks where a domain exception (e.g. <code>OutOfStockError</code>)
+          is caught and surfaced to the user.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- DESIGN SYSTEM -->
+  <section id="design-system">
+    <h2>Design System</h2>
+
+    <div class="callout warning">
+      <span class="callout-icon">⚠️</span>
+      <div class="callout-body">
+        <div class="callout-title">No CSS libraries</div>
+        <p>No Tailwind, no styled-components, no CSS modules. All styling uses the CSS custom properties in <code>index.css</code>, applied via inline styles or the utility class names below.</p>
+      </div>
+    </div>
+
+    <h3>Colour tokens</h3>
+    <table>
+      <thead><tr><th>Token</th><th>Hex</th><th>Use for</th></tr></thead>
+      <tbody>
+        <tr><td><code>--bg-base</code></td><td>#0d0f12</td><td>Page background</td></tr>
+        <tr><td><code>--bg-surface</code></td><td>#13161b</td><td>Sidebar, panels</td></tr>
+        <tr><td><code>--bg-card</code></td><td>#1a1e26</td><td>Cards, code blocks</td></tr>
+        <tr><td><code>--bg-card2</code></td><td>#1f2430</td><td>Table headers, elevated cards</td></tr>
+        <tr><td><code>--border</code></td><td>#2a2f3d</td><td>All borders and dividers</td></tr>
+        <tr><td><code>--accent</code></td><td>#3aecff</td><td>Primary accent, active states, links</td></tr>
+        <tr><td><code>--accent-dim</code></td><td>rgba(58,236,255,0.12)</td><td>Active state backgrounds</td></tr>
+        <tr><td><code>--green</code></td><td>#00d17a</td><td>ACTIVE status, success</td></tr>
+        <tr><td><code>--yellow</code></td><td>#ffb520</td><td>CANCELLED status, warnings</td></tr>
+        <tr><td><code>--red</code></td><td>#ff3355</td><td>EXPIRED status, errors</td></tr>
+        <tr><td><code>--purple</code></td><td>#a78bfa</td><td>CONFIRMED status</td></tr>
+        <tr><td><code>--text</code></td><td>#e8eaf0</td><td>Primary body text</td></tr>
+        <tr><td><code>--text-muted</code></td><td>#7c8494</td><td>Secondary text</td></tr>
+        <tr><td><code>--text-dim</code></td><td>#4a5165</td><td>Placeholders, low-contrast labels</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Typography tokens</h3>
+    <table>
+      <thead><tr><th>Token</th><th>Font</th><th>Use for</th></tr></thead>
+      <tbody>
+        <tr><td><code>--font-display</code></td><td>Syne</td><td>Headings, sidebar labels, brand text</td></tr>
+        <tr><td><code>--font-body</code></td><td>DM Sans</td><td>Body text, paragraphs, table cells</td></tr>
+        <tr><td><code>--font-mono</code></td><td>JetBrains Mono</td><td>Code, IDs, timestamps, stat values</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Utility class names</h3>
+    <table>
+      <thead><tr><th>Class</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>card</code></td><td>Surface card with border and border-radius</td></tr>
+        <tr><td><code>btn</code></td><td>Base button reset</td></tr>
+        <tr><td><code>btn-primary</code></td><td>Accent-coloured filled button</td></tr>
+        <tr><td><code>btn-sm</code></td><td>Smaller button variant</td></tr>
+        <tr><td><code>btn-success</code></td><td>Green confirm button</td></tr>
+        <tr><td><code>btn-danger</code></td><td>Red cancel/delete button</td></tr>
+        <tr><td><code>fade-in</code></td><td>Opacity 0 → 1, 0.25 s</td></tr>
+        <tr><td><code>slide-in</code></td><td>translateY 12px → 0, 0.25 s</td></tr>
+        <tr><td><code>dot-grid</code></td><td>Dot-pattern background (main content wrapper)</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Pulsing dot</h3>
+<pre><code><span class="cm">// LIVE indicator and ACTIVE badge — apply via inline style:</span>
+&lt;div style={{ animation: <span class="str">'blink 1.4s ease-in-out infinite'</span> }} /&gt;</code></pre>
+  </section>
+
+  <!-- PRINCIPLES -->
+  <section id="principles">
+    <h2>DDD · SOLID · EDA in This Codebase</h2>
+    <p>These patterns are not just concepts — every module maps directly to one or more of them.</p>
+
+    <section id="diag-solid">
+    <h3>Diagram — DDD · SOLID · EDA Concept Map</h3>
+    <div class="mermaid-wrap">
+      <div class="mermaid-label">mindmap — patterns applied in this codebase</div>
+      <div class="mermaid">
+mindmap
+  root((Frontend\nArchitecture))
+    DDD
+      Entities
+        Reservation\nrich domain object
+        Inventory\navailableStock getter
+      Value Objects
+        ReservationStatus\nlabel · color · pulsing
+      Repository Interfaces
+        IReservationRepository
+        IInventoryRepository
+        INameStore
+      Domain Events
+        4 event classes
+        emitted by use cases
+    SOLID
+      SRP
+        1 class · 1 job\nCreateUseCase creates only
+        Handlers only show toasts
+        HttpClient only sends HTTP
+      OCP
+        New behaviour via new handler\nnever edit the use case
+      LSP
+        All repositories\ninterchangeable
+      ISP
+        IReservationRepository\nIInventoryRepository\nINameStore separated
+      DIP
+        Use cases depend on interfaces\nInfra implements them\ncontainer.ts wires
+    EDA
+      EventBus singleton
+        publish · subscribe
+        unsubscribe fn returned
+      ToastHandler
+        reacts to 4 events
+        shows toast per event
+      RefreshHandler
+        reacts to 4 events
+        calls triggerRefresh
+      Wired in AppContext
+        useEffect on mount
+        cleanup on unmount
+      </div>
+    </div>
+    </section>
+
+    <div class="principle-grid">
+      <div class="principle-card">
+        <span class="p-tag p-ddd">DDD</span>
+        <div class="p-title">Domain-Driven Design</div>
+        <p>Business rules live inside <code>Reservation</code> and <code>Inventory</code> entities (<code>canConfirm</code>, <code>expiryPercentElapsed</code>). Repository interfaces are the domain "ports". Components never recompute what the entity already knows.</p>
+      </div>
+      <div class="principle-card">
+        <span class="p-tag p-srp">SRP</span>
+        <div class="p-title">Single Responsibility</div>
+        <p>Each class has one job: <code>CreateReservationUseCase</code> creates. <code>ToastHandler</code> shows toasts. <code>HttpClient</code> sends requests. A change to toast wording never touches the use case.</p>
+      </div>
+      <div class="principle-card">
+        <span class="p-tag p-dip">DIP</span>
+        <div class="p-title">Dependency Inversion</div>
+        <p>Use cases depend on <code>IReservationRepository</code> (interface), not <code>ApiReservationRepository</code> (class). <code>container.ts</code> is the only file that closes this gap. Components depend on hooks, not the container.</p>
+      </div>
+      <div class="principle-card">
+        <span class="p-tag p-ocp">OCP</span>
+        <div class="p-title">Open/Closed</div>
+        <p>Add a new reaction to <code>ReservationCreated</code> (e.g. analytics ping) by subscribing a new handler. The use case that publishes is <em>never</em> edited. Existing behaviour is preserved by default.</p>
+      </div>
+      <div class="principle-card" style="grid-column:1/-1">
+        <span class="p-tag p-eda">EDA</span>
+        <div class="p-title">Event-Driven Architecture</div>
+        <p>After any mutation, use cases publish a <code>DomainEvent</code> to the <code>EventBus</code> singleton. <code>ToastHandler</code> and <code>RefreshHandler</code> react independently. Neither the use case nor the component knows what happens after the event is published — they only fulfil their own responsibilities.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW-TO -->
+  <section id="howto">
+    <h2>How-To Recipes</h2>
+
+    <h3>Add a new tab</h3>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">Add the TabId value</div>
+          <p>In <code>src/types/index.ts</code>, add your new ID (e.g. <code>'analytics'</code>) to the <code>TabId</code> union type.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title">Create the component</div>
+          <p>Create <code>src/components/Analytics/Analytics.tsx</code>. Consume a presentation hook. No direct API calls in the component.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-title">Register in Sidebar</div>
+          <p>Add an entry to the <code>NAV</code> array in <code>Sidebar.tsx</code> with your <code>id</code>, <code>label</code>, and icon character.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <div class="step-title">Register in TopBar</div>
+          <p>Add your tab's title and description to the maps in <code>TopBar.tsx</code>.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-body">
+          <div class="step-title">Mount in App.tsx</div>
+          <p>Add a render branch for <code>tab === 'analytics'</code> in the conditional block in <code>App.tsx</code>.</p>
+        </div>
+      </div>
+    </div>
+
+    <h3>Add a new API operation (end-to-end)</h3>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">Add the method to the repository interface</div>
+          <p>Declare the signature in <code>src/domain/interfaces/IReservationRepository.ts</code>. This is the contract everything else depends on.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title">Implement it in the API repository</div>
+          <p>Add the HTTP call in <code>ApiReservationRepository.ts</code>. Map HTTP response to a domain entity; map error codes to domain exceptions.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-title">Create a use case</div>
+          <p>Create <code>src/application/use-cases/MyUseCase.ts</code>. It calls the interface. If it causes side effects, publish a domain event at the end of <code>execute()</code>.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <div class="step-title">Wire it in container.ts</div>
+          <p>Add <code>myOp: new MyUseCase(reservationRepo, eventBus)</code> to the <code>container</code> export.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-body">
+          <div class="step-title">Create a presentation hook</div>
+          <p>Call <code>container.myOp.execute()</code> from a hook. Expose loading, error, and result. The component imports only the hook.</p>
+        </div>
+      </div>
+    </div>
+
+    <h3>Add a new domain event side effect</h3>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">Create a handler file</div>
+          <p>Create <code>src/events/handlers/MyHandler.ts</code>. Export <code>registerMyHandler(deps)</code> that calls <code>eventBus.subscribe()</code> and returns a cleanup function.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title">Register in AppContext</div>
+          <p>Call <code>registerMyHandler()</code> inside the EDA <code>useEffect</code> in <code>AppContext.tsx</code> alongside the existing handlers. Include the cleanup in the return function.</p>
+        </div>
+      </div>
+    </div>
+
+    <h3>Change the backend URL at runtime</h3>
+    <p>Navigate to the <strong>Settings</strong> tab and update the API Base URL field. The change persists to <code>localStorage</code> and <code>HttpClient</code> reads it fresh on every request — no page reload required.</p>
+  </section>
+
+  <!-- CONVENTIONS -->
+  <section id="conventions">
+    <h2>Conventions &amp; Rules</h2>
+
+    <h3>TypeScript rules</h3>
+    <table>
+      <thead><tr><th>Rule</th><th>Detail</th></tr></thead>
+      <tbody>
+        <tr><td>Strict mode always on</td><td><code>noImplicitAny</code>, <code>strictNullChecks</code>, <code>noUnusedLocals</code> — all enforced at build time</td></tr>
+        <tr><td>No <code>any</code></td><td>Use <code>unknown</code> + a type guard instead. If truly necessary, add a comment explaining why.</td></tr>
+        <tr><td>No <code>ts-ignore</code></td><td>Fix the type error — do not suppress it</td></tr>
+        <tr><td>Explicit callback parameter types</td><td><code>.map((r: Reservation) =&gt; ...)</code> — implicit <code>any</code> in callbacks is a build error</td></tr>
+        <tr><td>Remove unused imports</td><td><code>noUnusedLocals</code> is on — unused imports are compile errors</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Architecture rules</h3>
+    <table>
+      <thead><tr><th>Rule</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td>Components do not call use cases or HttpClient directly</td><td>Must go through a hook — maintains testability and SRP</td></tr>
+        <tr><td>Domain layer has zero external imports</td><td>No React, no fetch, no localStorage — must be portable and framework-agnostic</td></tr>
+        <tr><td>Only <code>container.ts</code> imports both interfaces and implementations</td><td>Maintains the DIP boundary throughout the rest of the codebase</td></tr>
+        <tr><td>New side effects go in handler files, not use cases</td><td>Preserves OCP — use cases stay closed for modification</td></tr>
+        <tr><td>All HTTP through <code>HttpClient.request()</code></td><td>Never call <code>fetch()</code> directly — error normalisation and base URL logic live there</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Styling rules</h3>
+    <table>
+      <thead><tr><th>Rule</th></tr></thead>
+      <tbody>
+        <tr><td>No CSS libraries (Tailwind, styled-components, CSS modules). Use CSS variables + inline styles.</td></tr>
+        <tr><td>Use utility classes (<code>card</code>, <code>btn</code>, <code>btn-primary</code>, etc.) for base styles; extend with inline styles.</td></tr>
+        <tr><td>Do not rename or change the colour palette or font stack — they are referenced across every component.</td></tr>
+        <tr><td>Do not introduce a router library — the tab model is intentionally simple.</td></tr>
+        <tr><td>Do not add a state management library (Redux, Zustand, Jotai).</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Build gate</h3>
+    <div class="callout danger">
+      <span class="callout-icon">🚫</span>
+      <div class="callout-body">
+        <div class="callout-title">npm run build must exit 0 before any commit</div>
+        <p>
+          Runs <code>tsc</code> (full strict TypeScript) then <code>vite build</code>.
+          Common causes of failure: unused imports, implicit <code>any</code> in callbacks,
+          incorrect type annotation on a <code>setState</code> updater function, or a
+          <code>keyof (T | null)</code> expression resolving to <code>never</code>.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    inventory-reservation-client &nbsp;·&nbsp; DDD + SOLID + EDA &nbsp;·&nbsp;
+    React 18 · TypeScript 5.5 · Vite 6
+  </footer>
+
+</main>
+
+<script>
+  // Sticky nav — highlight the section currently in view
+  const sections = document.querySelectorAll('section[id]');
+  const links = document.querySelectorAll('.nav-link');
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const active = document.querySelector('.nav-link[href="#' + entry.target.id + '"]');
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -75% 0px' });
+
+  sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>

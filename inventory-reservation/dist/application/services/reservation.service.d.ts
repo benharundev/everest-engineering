@@ -1,0 +1,35 @@
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { DataSource } from 'typeorm';
+import { CreateReservationDto } from '../dto/create-reservation.dto';
+import { ReservationResponseDto } from '../dto/reservation-response.dto';
+import { PaginationDto, PaginatedResult } from '../dto/pagination.dto';
+import { IInventoryRepository } from '../../domain/interfaces/inventory-repository.interface';
+import { IReservationRepository } from '../../domain/interfaces/reservation-repository.interface';
+import { ReservationStatus } from '../../domain/value-objects/reservation-status.enum';
+import { ReservationStatusLog } from '../../domain/entities/reservation-status-log.entity';
+import { Repository } from 'typeorm';
+import { RedisStockService } from '../../infrastructure/redis/redis-stock.service';
+import { CircuitBreakerService } from '../../infrastructure/circuit-breaker/circuit-breaker.service';
+import { MutexService } from '../../infrastructure/mutex/mutex.service';
+export declare class ReservationService {
+    private readonly inventoryRepo;
+    private readonly reservationRepo;
+    private readonly redisStock;
+    private readonly circuitBreaker;
+    private readonly mutex;
+    private readonly events;
+    private readonly dataSource;
+    private readonly statusLogRepo;
+    private readonly logger;
+    constructor(inventoryRepo: IInventoryRepository, reservationRepo: IReservationRepository, redisStock: RedisStockService, circuitBreaker: CircuitBreakerService, mutex: MutexService, events: EventEmitter2, dataSource: DataSource, statusLogRepo: Repository<ReservationStatusLog>);
+    reserve(dto: CreateReservationDto): Promise<ReservationResponseDto>;
+    private reserveWithRedis;
+    private reserveWithFallback;
+    confirm(reservationId: string): Promise<ReservationResponseDto>;
+    cancel(reservationId: string): Promise<ReservationResponseDto>;
+    getAll(status?: ReservationStatus, pagination?: PaginationDto): Promise<PaginatedResult<ReservationResponseDto>>;
+    getById(reservationId: string): Promise<ReservationResponseDto>;
+    getStatusLogs(reservationId: string): Promise<ReservationStatusLog[]>;
+    onRedisRecovery(): Promise<void>;
+    private dispatchEvents;
+}
